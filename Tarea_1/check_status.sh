@@ -6,7 +6,7 @@ echo -n "Nombre del equipo: "
 hostname
 
 echo -n "IP Interna del equipo: "
-ip a show red_sistemas | awk '/inet/ {print $2}' | cut -d "/" -f1
+ip a show red_sistemas | awk '/inet / {print $2}' | cut -d "/" -f1
 
 
 # Muestra informacion sobre los sistemas de archivos
