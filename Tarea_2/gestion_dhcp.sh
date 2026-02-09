@@ -50,7 +50,7 @@ check_service() {
 }
 
 configure_interface() {
-	sed 's/INTERFACESv4=""/INTERFACESv4="red_sistemas"/' /etc/default/isc-dhcp-server 
+	sed -i 's/INTERFACESv4=""/INTERFACESv4="red_sistemas"/' /etc/default/isc-dhcp-server 
 }
 
 check_service
