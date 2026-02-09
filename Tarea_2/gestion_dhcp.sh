@@ -15,27 +15,18 @@ change_conf() {
 
 	config="# Descripcion(Ambito): ${v[scope]}"
 	config="$config\nsubnet 192.168.100.0 netmask 255.255.255.0 {"
-	config="$config\n        range ${v[ip_ini]} ${v[ip_ini]};"
+	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 	config="$config\n        option routers ${v[gateway]};"
 	config="$config\n        option domain-name-servers ${v[dns]};"
 	config="$config\n        default-lease-time ${v[leasetime]};"
 	config="$config\n        max-lease-time ${v[leasetime]};"
 	config="$config\n}"
 
-	$aux=$(cat /etc/dhcp/dhcpd.conf | grep -E "\s*subnet\s*192.168.100.0\s*netmask\s*255.255.255.0\s*\{\s*.*\}")
+	echo -e $config > /etc/dhcp/dhcp.conf
+	echo "Se ha editado el archivo de configuracion"
+	echo "Reiniciando servicio..."
+	systemctl restart isc-dhcp-server
 
-	if [ "$aux" = "" ]; then # Si no encuentra una configuración, entonces crea una nueva
-		echo -e $config >> /etc/dhcp/dhcp.conf
-	else
-		perl -0777 -i.original -pe 's/\s*subnet\s*192.168.100.0\s*netmask\s*255.255.255.0\s*\{\s*.*\}/# Descripcion(Ambito): ${v[scope]}`
-\nsubnet 192.168.100.0 netmask 255.255.255.0 {`
-\n        range ${v[ip_ini]} ${v[ip_ini]};`
-\n        option routers ${v[gateway]};`
-\n        option domain-name-servers ${v[dns]};`
-\n        default-lease-time ${v[leasetime]};`
-\n        max-lease-time ${v[leasetime]};`
-\n\}`' /etc/dhcp/dhcpd.conf
-	fi
 }
 
 leases_dhcp() {
