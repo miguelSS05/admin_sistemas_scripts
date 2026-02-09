@@ -22,7 +22,7 @@ change_conf() {
 	config="$config\n        max-lease-time ${v[leasetime]};"
 	config="$config\n}"
 
-	echo -e $config > /etc/dhcp/dhcp.conf
+	echo -e $config > /etc/dhcp/dhcpd.conf
 	echo "Se ha editado el archivo de configuracion"
 	echo "Reiniciando servicio..."
 	systemctl restart isc-dhcp-server
