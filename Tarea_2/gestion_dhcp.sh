@@ -4,7 +4,7 @@ source ../Funciones/bash_fun.sh --source-only  # Obtener funciones
 v[opc]="0" # Inicializar variable con valor "0"
 
 change_conf() {
-	echo -e "\n=== IPs Consecionadas ===\n"
+	echo -e "\n=== Configuracion ===\n"
 
 	getText "Ingresa el ambito: " scope
 	validateIp "Ingresa la IP Inicial: " ip_ini
