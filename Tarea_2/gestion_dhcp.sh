@@ -36,7 +36,7 @@ leases_dhcp() {
 
 state_dhcp() {
 	echo -e "\n=== Estado del servicio ===\n"
-	systemctl status isc-dhcp-server | head -n 12
+	systemctl status isc-dhcp-server
 }
 
 check_service() {
