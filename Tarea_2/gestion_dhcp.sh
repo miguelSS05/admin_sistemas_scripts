@@ -4,9 +4,7 @@ source ../Funciones/bash_fun.sh --source-only  # Obtener funciones
 v[opc]="0" # Inicializar variable con valor "0"
 
 change_conf() {
-	#v[computerIp]="192.168.10.100"
-
-	#getLocalIp computerIp
+	getLocalIp computerIp
 	getIpValue computerIp computerIp_val
 	getSegment computerIp computerIp_seg
 
