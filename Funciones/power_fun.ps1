@@ -293,7 +293,7 @@ function getOne {
     )
     $octets = $ip -split "\."
 
-    $octets[3] = $octets[3] + 1
+    $octet4 = $octet4 + 1
 
     $octet1=[int]$octets[0]
     $octet2=[int]$octets[1]
