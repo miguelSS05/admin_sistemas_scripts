@@ -295,27 +295,27 @@ function getOne {
 
     $octets[3] = $octets[3] + 1
 
-    $octets[0]=[int]$octets[0]
-    $octets[1]=[int]$octets[1]
-    $octets[2]=[int]$octets[2]
-    $octets[3]=[int]$octets[3]
+    $octet1=[int]$octets[0]
+    $octet2=[int]$octets[1]
+    $octet3=[int]$octets[2]
+    $octet4=[int]$octets[3]
 
-    if ($octets[3] -ge 256) {
-        $octets[2] = $octets[2]+1        
-        $octets[3] = 0
+    if ($octet4 -ge 256) {
+        $octet3 = $octet3+1        
+        $octet4 = 0
     }
 
-    if ($octets[2] -ge 256) {
-        $octets[1] = $octets[1]+1        
-        $octets[2] = 0
+    if ($octet3 -ge 256) {
+        $octet2 = $octet2+1        
+        $octet3 = 0
     }
 
-    if ($octets[1] -ge 256) {
-        $octets[0] = $octets[0]+1        
-        $octets[1] = 0
+    if ($octet2 -ge 256) {
+        $octet1 = $octet1+1        
+        $octet2 = 0
     }
 
-    return $octets[0]+"."+$octets[1]+"."+$octets[2]+"."+$octets[3]
+    return $octet1+"."+$octet2+"."+$octet3+"."+$octets4
 
 }
 
