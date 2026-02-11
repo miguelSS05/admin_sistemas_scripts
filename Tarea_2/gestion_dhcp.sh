@@ -39,9 +39,6 @@ change_conf() {
 		return 1
 	fi
 
-	echo ${v[computerIp_seg]}"
-	echo ${v[ip_ini_seg]}"
-
 	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
 		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
 		echo "Saliendo..."
