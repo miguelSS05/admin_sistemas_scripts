@@ -319,5 +319,5 @@ function restartIp {
     )
 
     Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
-    New-NetIPAddress -InterfaceAlias 2 -IPAddress $ip
+    New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip
 }
