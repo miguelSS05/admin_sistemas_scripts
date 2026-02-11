@@ -315,7 +315,7 @@ function getOne {
         $octet2 = 0
     }
 
-    return $octet1+"."+$octet2+"."+$octet3+"."+$octet4
+    return [string]$octet1+"."+[string]$octet2+"."+[string]$octet3+"."+[string]$octet4
 
 }
 
