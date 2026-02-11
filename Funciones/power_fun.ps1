@@ -205,9 +205,9 @@ function getSegment {
     if (($octet1 -ge 1) -AND ($octet1 -le 126)) {
         return $octets[0]+".0.0.0"
     } elseif (($octet1 -ge 128) -AND ($octet1 -le 191)) {
-        return $octets[0]+$octets[1]+".0.0"
+        return $octets[0]+"."+$octets[1]+".0.0"
     } elseif (($octet1 -ge 192) -AND ($octet1 -le 223)) {
-        return $octets[0]+$octets[1]+$octets[2]+".0"
+        return $octets[0]+"."+$octets[1]+"."+$octets[2]+".0"
     } else {
         # Nada
     }
@@ -318,6 +318,6 @@ function restartIp {
         [string]$ip
     )
 
-    Remove-NetIPAddress -InterfaceIndex 2 -Force
+    Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
     New-NetIPAddress -InterfaceAlias 2 -IPAddress $ip
 }
