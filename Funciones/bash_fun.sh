@@ -24,10 +24,15 @@ validateIp() {
   echo -n "$1"
   read aux
 
-# Mediante una expresión regular valida un formato IPv4, en caso de no cumplir, se obtiene un espacio vacío.
   v[$2]=$(echo $aux |  grep -P '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')
 
   while [ "${v[$2]}" = "" ]; do
+	if [ "$3" = "true" ]; then
+		if [ "$aux" = "N" ] || [ "$aux" = "n" ]; then
+			return 1
+		fi				
+	fi
+
 	echo -e '\nNo se ha detectado el formato IPv4, vuelva a intentarlo'
 	echo -n "$1"
         read aux
@@ -74,11 +79,23 @@ banIp() { # NO usar una variable llamada "banIp" por los problemas que pueda cau
 }
 
 usableIp() {
-	validateIp "$1" $2
+	validateIp "$1" $2 $3
+
+	if [ "${v[$2]}" = "N" ] || [ "${v[$2]}" = "n" ]; then
+		v[$2]=""
+		return 1
+	fi
+
 	banIp ${v[$2]}
 
 	while [ "${v[banIp]}" = "1" ]; do
-		validateIp "$1" $2
+		validateIp "$1" $2 $3
+
+		if [ "${v[$2]}" = "N" ] || [ "${v[$2]}" = "n" ]; then
+			v[$2]=""
+			return 1
+		fi
+
 		banIp ${v[$2]}
 	done
 
@@ -213,6 +230,32 @@ validateIpHosts() {
 
 getLocalIp() {
 	v[$1]=$(ip a show red_sistemas | awk '/inet / {print $2}' | cut -d "/" -f1)
+}
+
+sumOne() {
+	octet1=$(echo ${v[$1]} | cut -d "." -f1)
+	octet2=$(echo ${v[$1]} | cut -d "." -f2)
+	octet3=$(echo ${v[$1]} | cut -d "." -f3)
+	octet4=$(echo ${v[$1]} | cut -d "." -f4)
+
+	octet4=$((octet4 + 1))
+
+	if [ $octet4 -ge 256 ]; then
+		octet4=0
+		octet3=$((octet3 + 1))
+	do
+
+	if [ $octet3 -ge 256 ]; then
+		octet3=0
+		octet2=$((octet2 + 1))
+	do	
+
+	if [ $octet2 -ge 256 ]; then
+		octet2=0
+		octet1=$((octet1 + 1))
+	do	
+
+	v[$1]="$octet1.$octet2.$octet3.$octet4"		
 }
 
 

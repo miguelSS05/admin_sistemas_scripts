@@ -119,7 +119,7 @@ function validateSegment1 {
     Return $true
 }
 
-function validateSegment {
+function validateSegment2 {
     param (
         [string] $seg1,
         [string] $seg2,
@@ -178,13 +178,16 @@ function banIp {
 
 function usableIp {
 	param (
-		[string]$text
+		[string]$text,
+		[boolean]$opt
 	)
 
 	$aux = validateIp $text
 
 	while (banIp $aux) {
 		$aux = validateIp $text
+
+        if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return ""}
 	}
 
 	return $aux
@@ -271,9 +274,50 @@ function CompareIp {
     $value1 = ConvertTo-IPv4Integer $ip1
     $value2 = ConvertTo-IPv4Integer $ip2
 
-    if ($value1 -ge $value2) {
+    if ($value1 -gt $value2) {
         return $true
     } else {
         return $false
     }
+}
+
+function getOne {
+    param (
+        [string] $ip
+    )
+    $octets = $ip -split "\."
+
+    $octets[3] = $octets[3] + 1
+
+    $octet1=[string]$octets[0]
+    $octet2=[string]$octets[1]
+    $octet3=[string]$octets[2]
+    $octet4=[string]$octets[3]
+
+    if ($octets[3] -ge 256) {
+        $octet4 ="0"
+        $octet3= [string]($octets[3]+1)
+    }
+
+    if ($octets[2] -ge 256) {
+        $octet3 ="0"
+        $octet2= [string]($octets[2]+1)
+    }
+
+    if ($octets[1] -ge 256) {
+        $octet2 ="0"
+        $octet1= [string]($octets[1]+1)
+    }
+
+    return [string]$octet1+[string]$octet2+[string]$octet3+[string]$octet4
+
+}
+
+function restartIp {
+    param (
+        [string]$ip
+    )
+
+    Remove-NetIPAddress -InterfaceIndex 2 -Force
+    New-NetIPAddress -InterfaceAlias 2 -IPAddress $ip
 }

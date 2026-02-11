@@ -12,12 +12,39 @@ change_conf() {
 
 	getText "Ingresa el ambito: " scope
 	usableIp "Ingresa la IP Inicial: " ip_ini
-	getNetmask "ip_ini" "ip_ini_mask"
 
+	getNetmask "ip_ini" "ip_ini_mask"
 	validateIpHosts "ip_ini" "ip_ini_mask"
 	if [ "${v[invalidHost]}" = "true" ]; then
 		return 1
 	fi
+
+	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
+		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
+		
+		v[opc_2]="";
+		getText "¿Desea modificar la IP estática del servidor por la IP inicial o cancelar la configuracion?(S/N): " opc_2
+
+		while [ "${v[opc_2]}" != "S" ] && [ "${v[opc_2]}" != "s" ] && [ "${v[opc_2]}" != "N" ] && [ "${v[opc_2]}" != "n" ]; do
+			echo -e "\nSe ha seleccionado una opcion invalida"
+			getText "¿Desea modificar la IP estática del servidor por la IP inicial o cancelar la configuracion?(S/N): " opc_2
+		done
+
+		if [ "${v[opc_2]}" = "N" ] || [ "${v[opc_2]}" = "n" ]; then
+			return 1
+		fi
+
+		restart_ip ip_ini
+
+		sumOne ip_ini
+
+		validateIpHosts "ip_ini" "ip_ini_mask"
+		if [ "${v[invalidHost]}" = "true" ]; then
+			return 1
+		fi
+	fi
+
+	validateIpHosts "ip_ini" "ip_ini_mask"
 
 	usableIp "Ingresa la IP Final: " ip_fin
 
@@ -27,7 +54,7 @@ change_conf() {
 	getIpValue "ip_fin" "ip_fin_val"
 	getSegment "ip_fin" "ip_fin_seg"
 
-	if [ ${v[ip_ini_val]} -ge ${v[ip_fin_val]} ]; then
+	if [ ${v[ip_ini_val]} -gt ${v[ip_fin_val]} ]; then
 		echo "Se ha detectado que la ip inicial es mayor que la ip final"
 		echo "Saliendo..."
 		return 1
@@ -39,52 +66,7 @@ change_conf() {
 		return 1
 	fi
 
-	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
-		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
-		echo "Saliendo..."
-		return 1
-	fi
-
 	validateIpHosts "ip_fin" "ip_ini_mask"
-	if [ "${v[invalidHost]}" = "true" ]; then
-		return 1
-	fi
-
-	usableIp "Ingresa la Puerta de Enlace: " gateway
-
-	getIpValue "gateway" "gateway_val"
-	getSegment "gateway" "gateway_seg"
-
-	getIpValue "computerIp" "computerIp_val"
-	getSegment "computerIp" "computerIp_seg"
-	
-
-	if [ "${v[ip_fin_seg]}" != "${v[gateway_seg]}" ] || [ "${v[ip_ini_seg]}" != "${v[gateway_seg]}" ]; then
-		echo "Se ha detectado que las IPs y la puerta de enlace están en diferente segmento"
-		echo "Saliendo..."
-		return 1
-	fi
-
-	#if [ "$(compareIp gateway ip_ini)" = "true" ] && [ "$(compareIp ip_fin gateway)" = "true" ]; then
-	#	echo "Se ha detectado que la puerta de enlace se encuentra en el rango de IPs"
-	#	echo "Saliendo..."
-	#	return 1
-	#fi
-
-
-	if [ ${v[gateway_val]} -ge ${v[ip_ini_val]} ] && [ ${v[ip_fin_val]} -ge ${v[gateway_val]} ]; then
-		echo "Se ha detectado que la puerta de enlace se encuentra en el rango de IPs"
-		echo "Saliendo..."
-		return 1
-	fi
-
-	if [ ${v[ip_ini_val]} -eq ${v[gateway_val]} ] || [ ${v[ip_fin_val]} -eq ${v[gateway_val]} ]; then
-		echo "Se ha detectado que la puerta de enlace está entre la ip inicial e ip final"
-		echo "Saliendo..."
-		return 1
-	fi
-
-	validateIpHosts "gateway" "ip_ini_mask"
 	if [ "${v[invalidHost]}" = "true" ]; then
 		return 1
 	fi
@@ -95,12 +77,72 @@ change_conf() {
 		return 1
 	fi
 
-	usableIp "Ingresa el DNS: " dns
+	usableIp "Ingresa la Puerta de Enlace(N para omitir): " gateway "true"
+
+	if [ "${v[gateway]}" = "" ]; then
+
+	else
+		getIpValue "gateway" "gateway_val"
+		getSegment "gateway" "gateway_seg"
+
+		if [ "${v[ip_fin_seg]}" != "${v[gateway_seg]}" ] || [ "${v[ip_ini_seg]}" != "${v[gateway_seg]}" ]; then
+			echo "Se ha detectado que las IPs y la puerta de enlace están en diferente segmento"
+			echo "Saliendo..."
+			return 1
+		fi
+
+		if [ ${v[gateway_val]} -ge ${v[ip_ini_val]} ] && [ ${v[ip_fin_val]} -ge ${v[gateway_val]} ]; then
+			echo "Se ha detectado que la puerta de enlace se encuentra en el rango de IPs"
+			echo "Saliendo..."
+			return 1
+		fi
+
+		if [ ${v[ip_ini_val]} -eq ${v[gateway_val]} ] || [ ${v[ip_fin_val]} -eq ${v[gateway_val]} ]; then
+			echo "Se ha detectado que la puerta de enlace está entre la ip inicial e ip final"
+			echo "Saliendo..."
+			return 1
+		fi
+
+		validateIpHosts "gateway" "ip_ini_mask"
+		if [ "${v[invalidHost]}" = "true" ]; then
+			return 1
+		fi
+	fi
+
+	getIpValue "computerIp" "computerIp_val"
+	getSegment "computerIp" "computerIp_seg"
+	
+	#if [ "$(compareIp gateway ip_ini)" = "true" ] && [ "$(compareIp ip_fin gateway)" = "true" ]; then
+	#	echo "Se ha detectado que la puerta de enlace se encuentra en el rango de IPs"
+	#	echo "Saliendo..."
+	#	return 1
+	#fi
+
+
+	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
+	v[dns2]=""
+
+	if [ "${v[dns]}" != "" ]; then
+		config="$config\n        option domain-name-servers ${v[dns]}"
+		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"		
+	fi
+
+	if [ "${v[dns2]}" != "" ]; then
+		config="$config, ${[dns2]};"
+	else
+		config="$config;"
+	fi
+
 	validateInt "Ingresa el tiempo de consecion (en segundos): " leasetime
 
 	config="# Descripcion(Ambito): ${v[scope]}"
 	config="$config\nsubnet ${v[ip_ini_seg]} netmask ${v[ip_ini_mask]} {"
 	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
+
+
+	if [ "${v[dns]}" != "" ]; then
+		config="$config\n        option domain-name-servers ${v[dns]};"
+	fi
 	config="$config\n        option routers ${v[gateway]};"
 	config="$config\n        option domain-name-servers ${v[dns]};"
 	config="$config\n        default-lease-time ${v[leasetime]};"
@@ -115,18 +157,19 @@ change_conf() {
 }
 
 monitoreo_dhcp() {
-	leases_dhcp
-	state_dhcp
-}
+	if [ -f /var/lib/dhcp/dhcpd.leases ]; then
+		echo -e "\n=== IPs Concesionadas ===\n"
+		cat /var/lib/dhcp/dhcpd.leases | grep -E "lease [0-9]|starts|ends|}|hardware"	
+	else
+		echo -e "\nNo se ha encontrado el directo de IPs concesionadas"
+	fi
 
-leases_dhcp() {
-	echo -e "\n=== IPs Consecionadas ===\n"
-	cat /var/lib/dhcp/dhcpd.leases | grep -E "lease [0-9]|starts|ends|}|hardware"
-}
-
-state_dhcp() {
-	echo -e "\n=== Estado del servicio ===\n"
-	systemctl status isc-dhcp-server | head -n 12
+	if [ "$(systemctl status isc-dhcp-server 2>&1 | grep 'Unit isc-dhcp-server.service could not be found')" = "" ]; then
+	        echo -e "\n=== Estado del servicio ===\n"
+	        systemctl status isc-dhcp-server | head -n 12	
+	else
+		echo -e "\nNo se ha detectado el servicio isc-dhcp-server"
+	fi
 }
 
 install_service() {
@@ -148,6 +191,7 @@ install_service() {
 		apt-get install isc-dhcp-server > /dev/null
 		configure_interface
 		echo "Se ha terminado de instalar el servicio isc-dhcp-server"
+		change_conf
 	else
 		echo "Se ha detectado el servicio isc-dhcp-server"
 	fi	
@@ -166,8 +210,26 @@ configure_interface() {
 }
 
 restart_service() {
-	echo "Reiniciando servicio..."
-	systemctl restart isc-dhcp-server
+	if [ "$(dpkg -l 'isc-dhcp-server' 2>&1 | grep 'ii')" = "" ]; then
+		echo -e "\nNo se ha detectado el servicio isc-dhcp-server"
+	else
+		echo "Reiniciando servicio..."
+		systemctl restart isc-dhcp-server	
+	fi
+}
+
+restart_ip() {
+	if [ "$(cat /etc/network/interfaces | grep 'red_sistemas')" = "" ]; then
+		new_iface="auto red_sistemas"
+		new_iface="$new_iface\n iface red_sistemas inet static"
+		new_iface="$new_iface\n address ${v[$1]}"
+		echo new_iface >> /etc/network/interfaces
+	else
+		sed -i "s/\s*address\s*${v[computerIp]}\s*/address ${v[$1]}" /etc/network/interfaces
+	fi
+
+	echo -e "\nReiniciando servicio de red para aplicar los cambios..."
+	systemctl restart networking
 }
 
 while [ "${v[opc]}" != "6" ]; do
