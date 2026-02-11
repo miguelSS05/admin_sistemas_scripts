@@ -240,8 +240,6 @@ function validateTimeFormat {
 
 	$aux = getText $text
 
-	Write-host "El valor de aux es: $aux"
-
 	while (!($aux -match '^(\d+\.)?([0-1]?[0-9]|2[0-3]):[0-5]?[0-9](:[0-5]?[0-9])?$')) {
 		Write-Host "`nNo se ha detectado un tiempo correto, formatos vÃ¡lidos: (D.)?HH:MM:SS | (D.)?H:M:S | (D.)?HH:MM | (D.)?H:M" -Foreground Red
 		$aux = getText $text 
