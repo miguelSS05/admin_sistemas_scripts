@@ -249,17 +249,17 @@ sumOne() {
 	if [ $octet4 -ge 256 ]; then
 		octet4=0
 		octet3=$((octet3 + 1))
-	do
+	fi
 
 	if [ $octet3 -ge 256 ]; then
 		octet3=0
 		octet2=$((octet2 + 1))
-	do	
+	fi	
 
 	if [ $octet2 -ge 256 ]; then
 		octet2=0
 		octet1=$((octet1 + 1))
-	do	
+	fi	
 
 	v[$1]="$octet1.$octet2.$octet3.$octet4"		
 }

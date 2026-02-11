@@ -325,5 +325,5 @@ function restartIp {
     )
 
     Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
-    New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip
+    New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip -Confirm:$false > $null 2>&1
 }

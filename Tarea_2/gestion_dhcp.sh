@@ -79,9 +79,7 @@ change_conf() {
 
 	usableIp "Ingresa la Puerta de Enlace(N para omitir): " gateway "true"
 
-	if [ "${v[gateway]}" = "" ]; then
-
-	else
+	if [ "${v[gateway]}" != "" ]; then
 		getIpValue "gateway" "gateway_val"
 		getSegment "gateway" "gateway_seg"
 
@@ -104,6 +102,7 @@ change_conf() {
 		fi
 
 		validateIpHosts "gateway" "ip_ini_mask"
+
 		if [ "${v[invalidHost]}" = "true" ]; then
 			return 1
 		fi
@@ -120,6 +119,7 @@ change_conf() {
 
 
 	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
+	v[dns]=""
 	v[dns2]=""
 
 	if [ "${v[dns]}" != "" ]; then
