@@ -16,9 +16,9 @@
 }
 
 function getLocalIp {
-    $aux= Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" | Select-Object IPAddress | findstr "^[0-9]"
+    $aux = Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" | Select-Object IPAddress | findstr "^[0-9]"
 
-    if (!($aux -match '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')) {
+    if (!($aux -match '^\s*(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\s*$')) {
 		Write-Host "`nNo se ha detectado una IPv4 local válida" -Foreground Red
 		return "0"
 	}
@@ -98,7 +98,7 @@ function validateIp {
 
     if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return $aux}
 
-	while (!($aux -match '^(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5]))\.){3}(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5])))$')) {
+	while (!($aux -match '^\s*(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5]))\.){3}(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5])))\s*$')) {
 		Write-Host "`nNo se ha detectado el formato IPv4, vuelva a intentarlo" -Foreground Red
 		$aux = Read-Host -Prompt $text
         if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return $aux}
@@ -293,12 +293,12 @@ function getOne {
     )
     $octets = $ip -split "\."
 
-    $octet4 = $octet4 + 1
-
     $octet1=[int]$octets[0]
     $octet2=[int]$octets[1]
     $octet3=[int]$octets[2]
     $octet4=[int]$octets[3]
+
+    $octet4 = $octet4 + 1
 
     if ($octet4 -ge 256) {
         $octet3 = $octet3+1        
