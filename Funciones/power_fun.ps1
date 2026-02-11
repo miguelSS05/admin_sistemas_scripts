@@ -90,14 +90,18 @@ function validateIpHosts {
 
 function validateIp {
 	param (
-		[string]$text
+		[string]$text,
+        [boolean]$opt
 	)
 
 	$aux = Read-Host -Prompt $text
 
+    if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return $aux}
+
 	while (!($aux -match '^(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5]))\.){3}(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5])))$')) {
 		Write-Host "`nNo se ha detectado el formato IPv4, vuelva a intentarlo" -Foreground Red
 		$aux = Read-Host -Prompt $text
+        if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return $aux}
 	}
 
 	return $aux
@@ -182,10 +186,12 @@ function usableIp {
 		[boolean]$opt
 	)
 
-	$aux = validateIp $text
+	$aux = validateIp $text $opt
+
+    if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return ""}
 
 	while (banIp $aux) {
-		$aux = validateIp $text
+		$aux = validateIp $text $opt
 
         if ((($aux -eq "N") -or ($aux -eq "n")) -and ($opt -eq $true)) {return ""}
 	}
