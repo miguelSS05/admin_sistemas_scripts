@@ -217,7 +217,7 @@ restart_ip() {
 		new_iface="auto red_sistemas"
 		new_iface="$new_iface\n iface red_sistemas inet static"
 		new_iface="$new_iface\n address ${v[$1]}"
-		echo $new_iface >> /etc/network/interfaces
+		echo -e $new_iface >> /etc/network/interfaces
 	else
 		sed -i -E "s/[[:space:]]*address[[:space:]]+${v[computerIp]}/address ${v[$1]}/g" /etc/network/interfaces
 	fi
