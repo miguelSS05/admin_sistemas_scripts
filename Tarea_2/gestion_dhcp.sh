@@ -174,23 +174,19 @@ monitoreo_dhcp() {
 install_service() {
 	if [ "$(dpkg -l 'isc-dhcp-server' 2>&1 | grep 'ii')" = "" ]; then
 		echo "No se ha detectado el servicio isc-dhcp-server"
-		getText "¿Desea instalar el servicio? (1/0)" install
+		getText "¿Desea instalar el servicio? (1/0): " install
 
 		if [ "${v[install]}" = "1" ]; then
 			echo "Iniciando instalacion"
 			apt-get install isc-dhcp-server > /dev/null
 			configure_interface
 			echo "Se ha terminado de instalar el servicio isc-dhcp-server"
+			change_conf
 		elif [ "${v[install]}" = "0" ]; then
 			echo "Abortando instalacion"
 		else
 			echo "Se ha detectado una opc. invalida"		
 		fi
-
-		apt-get install isc-dhcp-server > /dev/null
-		configure_interface
-		echo "Se ha terminado de instalar el servicio isc-dhcp-server"
-		change_conf
 	else
 		echo "Se ha detectado el servicio isc-dhcp-server"
 	fi	
