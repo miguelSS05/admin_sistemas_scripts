@@ -225,7 +225,7 @@ restart_ip() {
 		new_iface="$new_iface\n address ${v[$1]}"
 		echo new_iface >> /etc/network/interfaces
 	else
-		sed -i "s/\s*address\s*${v[computerIp]}\s*/address ${v[$1]}" /etc/network/interfaces
+		sed -ir "s/\s*address\s*${v[computerIp]}\s*/address ${v[$1]}" /etc/network/interfaces
 	fi
 
 	echo -e "\nReiniciando servicio de red para aplicar los cambios..."
