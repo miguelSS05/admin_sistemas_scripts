@@ -190,7 +190,6 @@ validateRange() {
 	fi
 
 	v[rangeIp]="true"
-
 }
 
 validateIpHosts() {

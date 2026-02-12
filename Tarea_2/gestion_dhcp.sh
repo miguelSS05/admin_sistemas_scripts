@@ -139,12 +139,11 @@ change_conf() {
 	config="$config\nsubnet ${v[ip_ini_seg]} netmask ${v[ip_ini_mask]} {"
 	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 
-
-	if [ "${v[dns]}" != "" ]; then
-		config="$config\n        option domain-name-servers ${v[dns]};"
+	if [ "${v[gateway]}" != "" ]; then
+		config="$config\n        option routers ${v[gateway]};"
+		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"		
 	fi
-	config="$config\n        option routers ${v[gateway]};"
-	config="$config\n        option domain-name-servers ${v[dns]};"
+
 	config="$config\n        default-lease-time ${v[leasetime]};"
 	config="$config\n        max-lease-time ${v[leasetime]};"
 	config="$config\n}"
