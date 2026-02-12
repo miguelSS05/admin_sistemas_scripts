@@ -160,7 +160,7 @@ monitoreo_dhcp() {
 		echo -e "\n=== IPs Concesionadas ===\n"
 		cat /var/lib/dhcp/dhcpd.leases | grep -E "lease [0-9]|starts|ends|}|hardware"	
 	else
-		echo -e "\nNo se ha encontrado el directo de IPs concesionadas"
+		echo -e "\nNo se ha encontrado el directorio de IPs concesionadas"
 	fi
 
 	if [ "$(systemctl status isc-dhcp-server 2>&1 | grep 'Unit isc-dhcp-server.service could not be found')" = "" ]; then
