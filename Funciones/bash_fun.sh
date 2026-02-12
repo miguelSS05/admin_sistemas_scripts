@@ -26,6 +26,7 @@ validateIp() {
 
   if [ "$3" = "true" ]; then
 	if [ "$aux" = "N" ] || [ "$aux" = "n" ]; then
+		v[$2]="N"
 		return 1
 	fi				
   fi
@@ -35,6 +36,7 @@ validateIp() {
   while [ "${v[$2]}" = "" ]; do
 	if [ "$3" = "true" ]; then
 		if [ "$aux" = "N" ] || [ "$aux" = "n" ]; then
+			v[$2]="N"
 			return 1
 		fi				
 	fi
