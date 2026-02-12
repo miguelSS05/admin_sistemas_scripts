@@ -119,7 +119,12 @@ change_conf() {
 
 	v[dns]=""
 	v[dns2]=""
+
 	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
+
+	config="# Descripcion(Ambito): ${v[scope]}"
+	config="$config\nsubnet ${v[ip_ini_seg]} netmask ${v[ip_ini_mask]} {"
+	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 
 	if [ "${v[dns]}" != "" ]; then
 		config="$config\n        option domain-name-servers ${v[dns]}"
@@ -132,15 +137,11 @@ change_conf() {
 		config="$config;"
 	fi
 
-	validateInt "Ingresa el tiempo de consecion (en segundos): " leasetime
-
-	config="# Descripcion(Ambito): ${v[scope]}"
-	config="$config\nsubnet ${v[ip_ini_seg]} netmask ${v[ip_ini_mask]} {"
-	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
-
 	if [ "${v[gateway]}" != "" ]; then
 		config="$config\n        option routers ${v[gateway]};"	
 	fi
+
+	validateInt "Ingresa el tiempo de consecion (en segundos): " leasetime
 
 	config="$config\n        default-lease-time ${v[leasetime]};"
 	config="$config\n        max-lease-time ${v[leasetime]};"
