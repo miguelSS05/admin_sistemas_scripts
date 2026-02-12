@@ -117,10 +117,9 @@ change_conf() {
 	#	return 1
 	#fi
 
-
-	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
 	v[dns]=""
 	v[dns2]=""
+	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
 
 	if [ "${v[dns]}" != "" ]; then
 		config="$config\n        option domain-name-servers ${v[dns]}"
@@ -140,8 +139,7 @@ change_conf() {
 	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 
 	if [ "${v[gateway]}" != "" ]; then
-		config="$config\n        option routers ${v[gateway]};"
-		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"		
+		config="$config\n        option routers ${v[gateway]};"	
 	fi
 
 	config="$config\n        default-lease-time ${v[leasetime]};"
