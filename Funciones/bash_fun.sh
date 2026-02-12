@@ -65,6 +65,9 @@ banIp() { # NO usar una variable llamada "banIp" por los problemas que pueda cau
 	octet1=$(echo $1 | cut -d "." -f1)
 	octet2=$(echo $1 | cut -d "." -f2)
 
+	octet1=$((octet1))
+	octet2=$((octet2))
+		
 	v[banIp]=1
 
 	if [ $octet1 -eq 0 ]; then
