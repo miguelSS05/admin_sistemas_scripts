@@ -143,7 +143,7 @@ change_conf() {
 		if [ "${v[dns]}" != "" ]; then
 			config="$config, ${v[dns2]};"
 		else
-			config="$config\n        option domain-name-servers ${v[dns]}"		
+			config="$config\n        option domain-name-servers ${v[dns2]}"		
 		fi
 	
 	elif [ "${v[dns]}" != "" ]; then
