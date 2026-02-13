@@ -130,7 +130,7 @@ change_conf() {
 		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"
 
 		if [ "${v[dns2]}" != "" ]; then
-			config="$config, ${[dns2]};"
+			config="$config, ${v[dns2]};"
 		else
 			config="$config;"
 		fi		
