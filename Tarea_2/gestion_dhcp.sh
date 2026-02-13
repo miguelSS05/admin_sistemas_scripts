@@ -4,6 +4,10 @@ source ../Funciones/bash_fun.sh --source-only  # Obtener funciones
 v[opc]="0" # Inicializar variable con valor "0"
 
 change_conf() {
+	if [ "$(dpkg -l 'isc-dhcp-server' 2>&1 | grep 'ii')" = "" ]; then
+		echo -e "\nNo se ha detectado el servicio isc-dhcp-server, regresa al menú para instalarlo"
+	fi
+
 	getLocalIp computerIp
 	getIpValue computerIp computerIp_val
 	getSegment computerIp computerIp_seg

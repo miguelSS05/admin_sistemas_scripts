@@ -169,11 +169,11 @@ function banIp {
     } elseif ([int]$octets[0] -eq 127) {
         Write-Host "`nEl primer octeto no puede ser 127" -Foreground Red
         return $true;
-    } elseif (([int]$octets[0] -eq 169) -AND ([int]$octets[1] -eq 254)) {
-        Write-Host "`nLos primeros octetos no pueden ser 169.254" -Foreground Red
-        return $true;
-    } elseif ([int]$octets[0] -ge 224) { # Banear clase D y E inválidas
-        Write-Host "`nSe ha detectado que el primer octeto no pertenece a las clases A/B/C" -Foreground Red
+    #} elseif (([int]$octets[0] -eq 169) -AND ([int]$octets[1] -eq 254)) {
+    #    Write-Host "`nLos primeros octetos no pueden ser 169.254" -Foreground Red
+    #    return $true;
+    } elseif ([int]$octets[0] -eq 255) { # Banear clase D y E inválidas
+        Write-Host "`nEl primer octeto no puede ser 255" -Foreground Red
         return $true;
     }
 

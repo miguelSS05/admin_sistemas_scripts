@@ -78,11 +78,11 @@ banIp() { # NO usar una variable llamada "banIp" por los problemas que pueda cau
 	elif [ $octet1 -eq 127 ]; then
 		echo -e "\nEl primero octeto no puede ser 127"
 		return 1
-	elif [ $octet1 -eq 169 ] && [ $octet2 -eq 254 ]; then
-		echo -e "\nLos primeros octetos no pueden ser 169.254"
-		return 1
-	elif [ $octet1 -ge 224 ]; then
-		echo -e "\nSe ha detectado que el primer octeto no pertenece a las clases A/B/C"
+	#elif [ $octet1 -eq 169 ] && [ $octet2 -eq 254 ]; then
+	#	echo -e "\nLos primeros octetos no pueden ser 169.254"
+	#	return 1
+	elif [ $octet1 -eq 255 ]; then
+		echo -e "\nEl primer octeto no puede ser 255"
 		return 1
 	fi 
 
@@ -141,6 +141,8 @@ getNetmask() {
 		v[$2]="255.255.0.0"
 	elif [ $octet1 -ge 192 ] && [ $octet1 -le 223 ]; then
 		v[$2]="255.255.255.0"
+	else
+		v[$2]="255.255.255.255"
 	fi
 }
 
