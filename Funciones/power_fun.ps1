@@ -330,14 +330,14 @@ function restartIp {
 
 function GetNetmaskCIDR {
     param (
-        [int]$val1,   
-        [int]$val2,   
-        [int]$ip1, 
-        [int]$ip2
+        [int64]$val1,   
+        [int64]$val2,   
+        [string]$ip1, 
+        [string]$ip2
     )
 
-    $octets1 = $v[$ip1] -split "\."
-    $octets2 = $v[$ip2] -split "\."
+    $octets1 = $ip1 -split "\."
+    $octets2 = $ip2 -split "\."
 
     $octet11 = [int]$octets1[0]
     $octet21 = [int]$octets1[1]
@@ -466,7 +466,7 @@ function GetNetmaskCIDR {
 
 function sumMany {
     param (
-        [int]$ip,   
+        [string]$ip,   
         [int]$sum     
     )
 
