@@ -12,14 +12,17 @@ change_conf() {
 
 	getText "Ingresa el ambito: " scope
 	usableIp "Ingresa la IP Inicial: " ip_ini
+	getIpValue "ip_ini" "ip_ini_val"	
 
 	getNetmask "ip_ini" "ip_ini_mask"
-	validateIpHosts "ip_ini" "ip_ini_mask"
-	if [ "${v[invalidHost]}" = "true" ]; then
-		return 1
-	fi
+	usableIp "Ingresa la IP Final: " ip_fin
+	getIpValue "ip_fin" "ip_fin_val"
 
-	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
+	getNetmaskCIDR "ip_ini_val" "ip_fin_val" "ip_ini" "ip_fin" "segment" "netmask" "ip_fin_rango"
+
+	validateRange "segment" "ip_fin_rango" "computerIp" "Se ha detectado que la IP del servidor se encuentra en el rango de asignacion"
+
+	if [ "${v[rangeIp]}" = "false" ]; then
 		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
 		
 		v[opc_2]="";
@@ -35,24 +38,48 @@ change_conf() {
 		fi
 
 		restart_ip ip_ini
-
 		sumOne ip_ini
 
-		validateIpHosts "ip_ini" "ip_ini_mask"
-		if [ "${v[invalidHost]}" = "true" ]; then
-			return 1
-		fi
+		#validateIpHosts "ip_ini" "ip_ini_mask"
+		#if [ "${v[invalidHost]}" = "true" ]; then
+		#	return 1
+		#fi
 	fi
+	#validateIpHosts "ip_ini" "ip_ini_mask"
 
-	validateIpHosts "ip_ini" "ip_ini_mask"
+#	if [ "${v[invalidHost]}" = "true" ]; then
+#		return 1
+#	fi
 
-	usableIp "Ingresa la IP Final: " ip_fin
+#	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
+#		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
+		
+#		v[opc_2]="";
+#		getText "¿Desea modificar la IP estática del servidor por la IP inicial o cancelar la configuracion?(S/N): " opc_2
 
-	getIpValue "ip_ini" "ip_ini_val"
-	getSegment "ip_ini" "ip_ini_seg"
+#		while [ "${v[opc_2]}" != "S" ] && [ "${v[opc_2]}" != "s" ] && [ "${v[opc_2]}" != "N" ] && [ "${v[opc_2]}" != "n" ]; do
+#			echo -e "\nSe ha seleccionado una opcion invalida"
+#			getText "¿Desea modificar la IP estática del servidor por la IP inicial o cancelar la configuracion?(S/N): " opc_2
+#		done
 
-	getIpValue "ip_fin" "ip_fin_val"
-	getSegment "ip_fin" "ip_fin_seg"
+#		if [ "${v[opc_2]}" = "N" ] || [ "${v[opc_2]}" = "n" ]; then
+#			return 1
+#		fi
+
+#		restart_ip ip_ini
+#		sumOne ip_ini
+
+#		validateIpHosts "ip_ini" "ip_ini_mask"
+#		if [ "${v[invalidHost]}" = "true" ]; then
+#			return 1
+#		fi
+#	fi
+
+#	validateIpHosts "ip_ini" "ip_ini_mask"
+
+#	getSegment "ip_ini" "ip_ini_seg"
+
+#	getSegment "ip_fin" "ip_fin_seg"
 
 	if [ ${v[ip_ini_val]} -gt ${v[ip_fin_val]} ]; then
 		echo "Se ha detectado que la ip inicial es mayor que la ip final"
@@ -60,22 +87,16 @@ change_conf() {
 		return 1
 	fi
 
-	if [ "${v[ip_ini_seg]}" != "${v[ip_fin_seg]}" ]; then
-		echo "Se ha detectado que la ip inicial e ip final están en diferente segmento"
-		echo "Saliendo..."
-		return 1
-	fi
+#	if [ "${v[ip_ini_seg]}" != "${v[ip_fin_seg]}" ]; then
+#		echo "Se ha detectado que la ip inicial e ip final están en diferente segmento"
+#		echo "Saliendo..."
+#		return 1
+#	fi
 
-	validateIpHosts "ip_fin" "ip_ini_mask"
-	if [ "${v[invalidHost]}" = "true" ]; then
-		return 1
-	fi
-
-	validateRange "ip_ini" "ip_fin" "computerIp" "Se ha detectado que la IP del servidor se encuentra en el rango de asignacion"
-
-	if [ "${v[rangeIp]}" = "false" ]; then
-		return 1
-	fi
+#	validateIpHosts "ip_fin" "ip_ini_mask"
+#	if [ "${v[invalidHost]}" = "true" ]; then
+#		return 1
+#	fi
 
 	usableIp "Ingresa la Puerta de Enlace(N para omitir): " gateway "true"
 
@@ -83,11 +104,11 @@ change_conf() {
 		getIpValue "gateway" "gateway_val"
 		getSegment "gateway" "gateway_seg"
 
-		if [ "${v[ip_fin_seg]}" != "${v[gateway_seg]}" ] || [ "${v[ip_ini_seg]}" != "${v[gateway_seg]}" ]; then
-			echo "Se ha detectado que las IPs y la puerta de enlace están en diferente segmento"
-			echo "Saliendo..."
-			return 1
-		fi
+#		if [ "${v[ip_fin_seg]}" != "${v[gateway_seg]}" ] || [ "${v[ip_ini_seg]}" != "${v[gateway_seg]}" ]; then
+#			echo "Se ha detectado que las IPs y la puerta de enlace están en diferente segmento"
+#			echo "Saliendo..."
+#			return 1
+#		fi
 
 		if [ ${v[gateway_val]} -ge ${v[ip_ini_val]} ] && [ ${v[ip_fin_val]} -ge ${v[gateway_val]} ]; then
 			echo "Se ha detectado que la puerta de enlace se encuentra en el rango de IPs"
@@ -101,11 +122,11 @@ change_conf() {
 			return 1
 		fi
 
-		validateIpHosts "gateway" "ip_ini_mask"
+#		validateIpHosts "gateway" "ip_ini_mask"
 
-		if [ "${v[invalidHost]}" = "true" ]; then
-			return 1
-		fi
+#		if [ "${v[invalidHost]}" = "true" ]; then
+#			return 1
+#		fi
 	fi
 
 	getIpValue "computerIp" "computerIp_val"
@@ -123,18 +144,18 @@ change_conf() {
 	usableIp "Ingresa el DNS principal (N para omitirlo): " dns "true"
 
 	config="# Descripcion(Ambito): ${v[scope]}"
-	config="$config\nsubnet ${v[ip_ini_seg]} netmask ${v[ip_ini_mask]} {"
+	config="$config\nsubnet ${v[segment]} netmask ${v[netmask]} {"
 	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 
 	if [ "${v[dns]}" != "" ]; then
 		config="$config\n        option domain-name-servers ${v[dns]}"
-		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"		
-	fi
+		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"
 
-	if [ "${v[dns2]}" != "" ]; then
-		config="$config, ${[dns2]};"
-	else
-		config="$config;"
+		if [ "${v[dns2]}" != "" ]; then
+			config="$config, ${[dns2]};"
+		else
+			config="$config;"
+		fi		
 	fi
 
 	if [ "${v[gateway]}" != "" ]; then
@@ -163,8 +184,8 @@ monitoreo_dhcp() {
 	fi
 
 	if [ "$(systemctl status isc-dhcp-server 2>&1 | grep 'Unit isc-dhcp-server.service could not be found')" = "" ]; then
-	        echo -e "\n=== Estado del servicio ===\n"
-	        systemctl status isc-dhcp-server | head -n 12	
+	    echo -e "\n=== Estado del servicio ===\n"
+	    systemctl status isc-dhcp-server | head -n 12	
 	else
 		echo -e "\nNo se ha detectado el servicio isc-dhcp-server"
 	fi

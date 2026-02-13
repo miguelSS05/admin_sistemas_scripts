@@ -164,6 +164,181 @@ compareIp() {
 	fi
 }
 
+
+getNetmaskCIDR() { # Obtiene como entrada dos valores enteros que representan el valor de una IP
+	# Ademas recibe de entrada ambas IPs
+	local resul=0
+	local count=0
+	local accum=1
+	local netw=0
+	local netsegment=""
+	local netseg_count=0
+	local netmask=""
+	local oct_count=0
+	local pivot1=0
+	local pivot2=0
+	local multiplier=0
+	local ipFinal=""
+	local summ=0
+
+	octet11=$(echo ${v[$3]} | cut -d "." -f1) # Octetos vector 1
+	octet21=$(echo ${v[$3]} | cut -d "." -f2)
+	octet31=$(echo ${v[$3]} | cut -d "." -f3)
+	octet41=$(echo ${v[$3]} | cut -d "." -f4)
+
+	octet12=$(echo ${v[$4]} | cut -d "." -f1) # Octetos vector 2
+	octet22=$(echo ${v[$4]} | cut -d "." -f2)
+	octet32=$(echo ${v[$4]} | cut -d "." -f3)
+	octet42=$(echo ${v[$4]} | cut -d "." -f4)
+
+	if [ ${v[$1]} -gt ${v[$2]} ]; then
+		resul=$((${v[$1]} - ${v[$2]}))
+	else
+		resul=$((${v[$2]} - ${v[$1]}))
+	fi
+
+	resul=$(($resul+2))
+
+	while [ $resul -ge $accum ]; do
+		count=$(($count+1))
+		accum=$(($accum*2))
+	done
+
+	netw=$((32-$count)) # Bits pertenecientes a la parte de red
+	netseg_count=$(($netw/8))
+
+	local block=$(($netw-$netseg_count*8))
+
+	block=$((8-$block))
+	block=$((2**$block))
+
+	local aux=$((4-$netseg_count))
+
+	if [ $aux -eq 1 ]; then
+		pivot1=$octet41
+		pivot2=$octet42
+		multiplier=0
+	fi
+
+	if [ $aux -eq 2 ]; then
+		pivot1=$octet31
+		pivot2=$octet32
+		multiplier=256		
+	fi
+
+	if [ $aux -eq 3 ]; then
+		pivot1=$octet21
+		pivot2=$octet22
+		multiplier=$((256*256))		
+	fi
+
+	if [ $aux -eq 4 ]; then
+		pivot1=$octet11
+		pivot2=$octet12	
+		multiplier=$((256*256*256))	
+	fi
+
+	local div1=$(($pivot1 / $block))
+	local div2=$(($pivot2 / $block))
+
+	while [ $div1 -ne $div2 ]; do
+		netw=$(($netw-1)) # Bits pertenecientes a la parte de red
+		netseg_count=$(($netw/8))
+
+		block=$(($netw-$netseg_count*8))
+		block=$((8-$block))
+		block=$((2**$block))	
+
+		div1=$(($pivot1 / $block))
+		div2=$(($pivot2 / $block))
+	done
+
+	while [ $netw -ge 8 ]; do
+		oct_count=$(($oct_count+1))
+		if [ $oct_count -lt 4 ]; then
+			netmask=$netmask"255."
+		else
+			netmask=$netmask"255"
+		fi
+
+		if [ $oct_count -eq 1 ]; then
+			netsegment=$netsegment"$octet11."
+		elif [ $oct_count -eq 2 ]; then
+			netsegment=$netsegment"$octet21."
+		elif [ $oct_count -eq 3 ]; then
+			netsegment=$netsegment"$octet31."
+		elif [ $oct_count -eq 4 ]; then
+			netsegment=$netsegment"$octet41"
+		fi	
+		
+		netw=$(($netw-8))
+	done
+
+	if [ $oct_count -ge 3 ]; then
+		oct_count=$(($oct_count+1))
+		if [ $netw -eq 7 ]; then
+			netmask=$netmask"254"
+		elif [ $netw -eq 6 ]; then
+			netmask=$netmask"252"
+		elif [ $netw -eq 5 ]; then
+			netmask=$netmask"248"
+		elif [ $netw -eq 4 ]; then
+			netmask=$netmask"240"
+		elif [ $netw -eq 3 ]; then
+			netmask=$netmask"224"
+		elif [ $netw -eq 2 ]; then
+			netmask=$netmask"192"
+		elif [ $netw -eq 1 ]; then
+			netmask=$netmask"128"
+		elif [ $netw -eq 0 ]; then
+			oct_count=$(($oct_count-1))
+		fi
+
+		netsegment=$netsegment"$(($div1*block))"
+
+	else
+		oct_count=$((oct_count+1))
+		if [ $netw -eq 7 ]; then
+			netmask=$netmask"254."
+		elif [ $netw -eq 6 ]; then
+			netmask=$netmask"252."
+		elif [ $netw -eq 5 ]; then
+			netmask=$netmask"248."
+		elif [ $netw -eq 4 ]; then
+			netmask=$netmask"240."
+		elif [ $netw -eq 3 ]; then
+			netmask=$netmask"224."
+		elif [ $netw -eq 2 ]; then
+			netmask=$netmask"192."
+		elif [ $netw -eq 1 ]; then
+			netmask=$netmask"128."
+		elif [ $netw -eq 0 ]; then
+			oct_count=$(($oct_count-1))
+		fi
+
+		netsegment=$netsegment"$(($div1*block))."
+	fi
+
+	while [ $oct_count -lt 4 ]; do
+		oct_count=$(($oct_count+1))
+		if [ $oct_count -eq 4 ]; then
+			netmask=$netmask"0"
+			netsegment=$netsegment"0"
+		else
+			netmask=$netmask"0."
+			netsegment=$netsegment"0."
+		fi
+	done
+
+	v[$5]=$netmask
+	v[$6]=$netsegment
+
+	summ=$$((multiplier*block - 1))
+
+	sumMany $6 $summ $7
+}
+
+
 compareSegment() {
 	getSegment $1 "$1_seg"
 	getSegment $2 "$2_seg"
@@ -272,4 +447,31 @@ sumOne() {
 if [ "${1}" != "--source-only" ]; then
 	getText "Dame un valor" "var1"
 fi
+
+sumMany() {
+	octet1=$(echo ${v[$1]} | cut -d "." -f1)
+	octet2=$(echo ${v[$1]} | cut -d "." -f2)
+	octet3=$(echo ${v[$1]} | cut -d "." -f3)
+	octet4=$(echo ${v[$1]} | cut -d "." -f4)
+
+	octet4=$((octet4 + $2))
+
+	if [ $octet4 -ge 256 ]; then
+		octet3=$(($octet3 + $octet4 / 256))
+		octet4=$(($octet4 - 256 * ($octet4/256)))
+	fi
+
+	if [ $octet3 -ge 256 ]; then
+		octet2=$(($octet2 + $octet3 / 256))
+		octet3=$(($octet3 - 256 * ($octet3/256)))
+	fi	
+
+	if [ $octet2 -ge 256 ]; then
+		octet1=$(($octet1 + $octet2 / 256))
+		octet2=$(($octe24 - 256 * ($octet2/256)))
+	fi	
+
+	v[$3]="$octet1.$octet2.$octet3.$octet4"		
+}
+
 
