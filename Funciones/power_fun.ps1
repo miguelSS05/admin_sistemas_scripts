@@ -16,7 +16,7 @@
 }
 
 function getLocalIp {
-    $aux = Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" | Select-Object IPAddress | findstr "^[0-9]" -Confirm:$false > $null 2>&1
+    $aux = Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" | Select-Object IPAddress | findstr "^[0-9]"
 
     if (($aux -eq $null)) {
 		Write-Host "`nNo se ha detectado una IPv4 local válida" -Foreground Red
