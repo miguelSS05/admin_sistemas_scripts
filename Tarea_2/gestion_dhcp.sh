@@ -6,6 +6,7 @@ v[opc]="0" # Inicializar variable con valor "0"
 change_conf() {
 	if [ "$(dpkg -l 'isc-dhcp-server' 2>&1 | grep 'ii')" = "" ]; then
 		echo -e "\nNo se ha detectado el servicio isc-dhcp-server, regresa al menú para instalarlo"
+		return 1
 	fi
 
 	getLocalIp computerIp
