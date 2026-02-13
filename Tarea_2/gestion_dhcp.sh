@@ -17,12 +17,15 @@ change_conf() {
 
 	getText "Ingresa el ambito: " scope
 	usableIp "Ingresa la IP Inicial: " ip_ini
+	getSegment ip_ini ip_ini_seg
 
 	getNetmask "ip_ini" "ip_ini_mask"
 #	validateIpHosts "ip_ini" "ip_ini_mask"
 #	if [ "${v[invalidHost]}" = "true" ]; then
 #		return 1
 #	fi
+
+	
 
 	if [ "${v[ip_ini_seg]}" != "${v[computerIp_seg]}" ]; then
 		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
