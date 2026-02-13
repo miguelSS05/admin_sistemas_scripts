@@ -130,14 +130,20 @@ change_conf() {
 	config="$config\n        range ${v[ip_ini]} ${v[ip_fin]};"
 
 	if [ "${v[dns]}" != "" ]; then
-		config="$config\n        option domain-name-servers ${v[dns]}"
-		usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"
+		config="$config\n        option domain-name-servers ${v[dns]}"		
+	fi
 
-		if [ "${v[dns2]}" != "" ]; then
+	usableIp "Ingresa la DNS secundaria (N para omitirlo): " dns2 "true"
+
+	if [ "${v[dns2]}" != "" ]; then
+		if [ "${v[dns]}" != "" ]; then
 			config="$config, ${v[dns2]};"
 		else
-			config="$config;"
-		fi		
+			config="$config\n        option domain-name-servers ${v[dns]}"		
+		fi
+	
+	elif [ "${v[dns]}" != "" ]; then
+		config="$config;"
 	fi
 
 	if [ "${v[gateway]}" != "" ]; then
