@@ -17,7 +17,7 @@ function validateEmpty {
 function validateIp {
 	param (
 		[string]$ip,
-        [boolean]$var,
+        [string]$var,
         [boolean]$opt
 	)
 

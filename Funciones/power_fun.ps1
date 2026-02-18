@@ -317,11 +317,32 @@ function getOne {
 
 }
 
+function getPrefix {
+	param (
+		[string]$ip
+	)
+
+    $octets = $ip -split "\."
+
+    $octet1 = [int]$octets[0]
+
+    if (($octet1 -ge 1) -AND ($octet1 -le 126)) {
+        return "8"
+    } elseif (($octet1 -ge 128) -AND ($octet1 -le 191)) {
+        return "16"
+    } elseif (($octet1 -ge 192) -AND ($octet1 -le 223)) {
+        return "24"
+    } else {
+        # Nada
+    }
+}
+
 function restartIp {
     param (
         [string]$ip
     )
 
+    $prefix = getPrefix $ip
     Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
     New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip -Confirm:$false > $null 2>&1
 }

@@ -1,6 +1,7 @@
 param (
     [string] $option,
     [switch] $install,
+    [switch] $help,
     [string] $domain,
     [string] $ttl,
     [string] $configureIp,
@@ -8,6 +9,27 @@ param (
 )
 
 . ../Funciones/power_fun_par.ps1
+
+helpM="--- Opciones ---`n`n"
+helpM="${helpM}1) Verificar existencia del servicio`n"
+helpM="${helpM}2) Instalar servicio`n"
+helpM="${helpM}3) Monitoreo`n" # Verificar sintaxis y ver estado del servicio
+helpM="${helpM}4) Agregar zona`n"
+helpM="${helpM}5) Eliminar zona`n"
+helpM="${helpM}6) Consultar lista de zonas (dominios)`n"
+helpM="${helpM}7) Verificar configuración IP`n"
+helpM="${helpM}--- Banderas ---`n`n"
+helpM="${helpM}-help (mostrar este mensaje)`n"
+helpM="${helpM}-option (seleccionar opcion)`n"
+helpM="${helpM}-install (confirmar instalacion)`n"
+helpM="${helpM}-domain (nombre de dominio)`n" # Verificar sintaxis y ver estado del servicio
+helpM="${helpM}-ttl (time to live)`n"
+helpM="${helpM}-configureIp (numero serial)`n"
+helpM="${helpM}-ip (colocar IP a configurar)`n"
+
+if ($help) {
+    Write-Host $helpM
+}
 
 $color="yellow"
 $ipLocal=""
@@ -28,12 +50,13 @@ function changeConf {
 	} 
 
     validateEmpty "$domain" "Nombre de dominio"
-    usableIp "$ip" "IP del dominio"
+    usableIp "$ip" "IP del dominio" $false
+    validateTimeFormat "$ttl" "TimeToLive"
 
     $prefix= getLocalPrefix
     $netmask= getNetmask $ip
     $segment= getSegment $ip
-    $reverseSeg= getBackwardSegment $netmask $ip
+    #$reverseSeg= getBackwardsSegment $netmask $ip
 
     $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
 
@@ -95,6 +118,7 @@ function monitoreo {
 }
 
 function deleteZone {
+    validateEmpty "$domain" "Nombre de dominio" # Validar que no este vacio
     $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
 
     if ($aux -eq $null) {
@@ -122,7 +146,7 @@ function configureIp {
         exit 1
     }
 
-    usableIP $configureIp "Nueva IP"
+    usableIP $configureIp "Nueva IP" $false
     restartIp $configureIp
 }
 

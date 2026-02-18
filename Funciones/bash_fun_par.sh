@@ -117,7 +117,7 @@ sumOne() {
 }
 
 check_service() {
-	if [ "$(dpkg -l '$1' 2>&1 | grep 'ii')" = "" ]; then
+	if [ "$(dpkg -l $1 2>&1 | grep 'ii')" = "" ]; then
 		echo -e "\nNo se ha detectado el servicio $1"
 	else
 		echo -e "\nSe ha detectado el servicio $1"
@@ -169,7 +169,7 @@ done < /etc/network/interfaces
 }
 
 install_service() {
-	if [ "$(dpkg -l '$1' 2>&1 | grep 'ii')" = "" ]; then
+	if [ "$(dpkg -l $1 2>&1 | grep 'ii')" = "" ]; then
 		echo "No se ha detectado el servicio $1"
 
 		if [ "$2" = "1" ]; then
