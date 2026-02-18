@@ -34,7 +34,7 @@ option=0
 confirm="0"
 
 # OBTENER PARAMETROS
-while getopts ":i :o: :d: :t: :s: :r: :n: :c :h" flag; do
+while getopts ":i :o: :d: :t: :s: :r: :n: :c :h :v:" flag; do
     case "${flag}" in
         o) option=$OPTARG ;;
         i) install="1" ;; 

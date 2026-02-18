@@ -47,7 +47,7 @@ banIp() {
 }
 
 usableIp() {
-  validateIp $1 $2
+  validateIp $1 "$2"
   banIp $1
 }
 
