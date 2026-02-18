@@ -336,8 +336,14 @@ case "$option" in
   configure_options 
   ;;
   3) status_service ;;
-  4) configure_service ;;
-  5) delete_zone ;;
+  4) 
+  configure_service
+  configure_options 
+  ;;
+  5) 
+  delete_zone 
+  configure_options
+  ;;
   6) read_zones ;;
   7) configureIp ;;
 
