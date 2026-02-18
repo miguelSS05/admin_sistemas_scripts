@@ -230,7 +230,7 @@ EOF
                                       $refresh;
                                       $retry;
                                       $expire;
-                                      $ttl; )
+                                      $ttl ) ;
 @          IN          NS           ns1.$domain_name.
 @          IN          A            $ip
 ns1        IN          A            $ip
@@ -286,8 +286,8 @@ delete_zone() {
   # Excluir a un dominio en especifico del archivo de zona
   awk -v start="$start" -v end="$end" '
   $0 ~ start {skip=1}
-  $0 ~ end {skip=0; next}
-  !skip' /etc/bind/named.conf.local > temp.txt && cat temp.txt > /etc/bind/named.conf.local && rm temp.txt
+  !erased && $0 ~ end {skip=0; erased=1; next}
+  !skip' /etc/bind/named.conf.local > temp.txt && cat temp.txt | awk '/zone|{|}|file|type/' > /etc/bind/named.conf.local && rm temp.txt
 
   # while read line; do
   #   if [ "$line" =~ $start ]; then
