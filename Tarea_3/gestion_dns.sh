@@ -271,17 +271,17 @@ delete_zone() {
   skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
 
   if [ -f $filedb ] && [ -n $filedb ]; then
-      rm $filedb
-      cat $filedb
+      rm $filedb 
   else
       echo -e "No se encontraron los registros para la zona $domain_name"
+      exit 1
   fi
 
   # Excluir a un dominio en especifico del archivo de zona
   awk -v start="$start" -v end="$end" '
   $0 ~ start {skip=1}
   $0 ~ end {skip=0; next}
-  !skip' /etc/bind/named.conf.local > temp.txt && temp.txt > /etc/bind/named.conf.local && rm temp.txt
+  !skip' /etc/bind/named.conf.local > temp.txt && cat temp.txt > /etc/bind/named.conf.local && rm temp.txt
 
   # while read line; do
   #   if [ "$line" =~ $start ]; then
@@ -310,6 +310,9 @@ delete_zone() {
   #     content="$content$line\n"
   #   fi
   # done < /etc/bind/named.conf.local
+
+  echo "Reiniciando servicio..."
+  systemctl restart named
 }
 
 #configureIp
