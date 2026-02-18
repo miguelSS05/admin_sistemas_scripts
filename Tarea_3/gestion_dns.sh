@@ -274,7 +274,7 @@ delete_zone() {
   filedb=$(awk -v start="$start" -v end="$end" '
   $0 ~ start {skip=1}
   skip && $0 ~ end {skip=0; next}
-  !skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
+  skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
 
   if [ -f $filedb ] && [ -n $filedb ]; then
       rm $filedb 
