@@ -44,6 +44,7 @@ while getopts ":i :o: :d: :t: :s: :r: :n: :c :h" flag; do
         r) refresh=$OPTARG ;; 
         n) nueva_ip=$OPTARG ;; 
         c) confirm="1" ;; 
+        v) ip=$OPTARG ;; 
         h) 
           echo -e $help 
           exit 1
@@ -79,7 +80,7 @@ configure_options() {
       echo "Para seleccionar una nueva IP use la bandera -n"
       return 1
     fi
-    validateIp "$nueva_ip" "IP Nueva"
+    usableIp "$nueva_ip" "IP Nueva"
     restart_ip "$nueva_ip"
     echo "Se ha modificado la ip"
   fi
@@ -146,7 +147,7 @@ configure_service() {
       echo "Para seleccionar una nueva IP use la bandera -n"
       return 1
     fi
-    validateIp "$nueva_ip" "IP Nueva"
+    usableIp "$nueva_ip" "IP Nueva"
     restart_ip "$nueva_ip"
     echo "Se ha modificado la ip"
   fi
@@ -163,6 +164,7 @@ configure_service() {
   validateInt "$refresh" "Refrescar"
   validateInt "$retry" "Tiempo en el cual invalidaria el servicio"
   validateInt "$expire" "Tiempo de expiracion"
+  usableIp "$ip" "IP dominio"
 
   content="" #
   start="^[[:space:]]*zone[[:space:]]*\"$domain_name\"[[:space:]]*{[[:space:]]*"
@@ -226,9 +228,9 @@ EOF
                                       $expire;
                                       $ttl; )
 @          IN          NS           ns1.$domain_name.
-@          IN          A            $ipLocal
-ns1        IN          A            $ipLocal
-www        IN          A            $ipLocal
+@          IN          A            $ip
+ns1        IN          A            $ip
+www        IN          A            $ip
 
 EOF
 
