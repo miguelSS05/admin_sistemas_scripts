@@ -97,13 +97,15 @@ configure_options() {
   prefix_local=$(getPrefix)
 
   if [ -f /etc/bind/named.conf.options ]; then
+    chmod -R 755 /etc/bind/named.conf.options
+    chwon -R bind:bind /etc/bind/named.conf.options
     options="options {\n"
     options="${options}  directory \"/var/cache/bind\";\n"
     options="${options}  dnssec-validation auto;\n"
     options="${options}  listen-on {${ip_segment}/${prefix_local}; localhost; };\n"
-    options="${options}  allow-query {{${ip_segment}/${prefix_local}; localhost; };\n"
+    options="${options}  allow-query {${ip_segment}/${prefix_local}; localhost; };\n"
     options="${options}  recursion yes;\n"
-    options="${options}  allow-recursion {{${ip_segment}/${prefix_local}; localhost; };\n"
+    options="${options}  allow-recursion {${ip_segment}/${prefix_local}; localhost; };\n"
     options="${options}};"
 
     echo -e $options > /etc/bind/named.conf.options
@@ -217,6 +219,8 @@ EOF
 
 # EOF
 
+  chmod -R 755 /var/cache/bind
+  chown -R bind:bind /var/cache/bind
   cat << EOF > /var/cache/bind/db.$domain_name
 
 \$TTL $ttl
