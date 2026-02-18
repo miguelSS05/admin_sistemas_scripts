@@ -119,6 +119,8 @@ configure_options() {
   else 
     echo "No se ha encontrado el archivo /etc/default/names"
   fi
+
+  systemctl restart named
 }
 
 status_service() { # VERIFICAR SI EL SERVICIO ESTA INSTALADO ANTES
