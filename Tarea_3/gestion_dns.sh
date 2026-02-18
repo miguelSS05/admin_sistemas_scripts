@@ -52,7 +52,7 @@ done
 configureIp() {
   ipLocal=$(getLocalIp)
 
-  if [ "$(validateIpConf '$ipLocal')" = "false" ]; then
+  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"
@@ -69,7 +69,7 @@ configureIp() {
 configure_options() {
   ipLocal=$(getLocalIp)
 
-  if [ "$(validateIpConf '$ipLocal')" = "false" ]; then
+  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"
@@ -80,7 +80,7 @@ configure_options() {
     echo "Se ha modificado la ip"
   fi
 
-  resul="$(check_service "bind9" | grep 'No se ha detectado el servicio')"
+  resul="$(check_service 'bind9' | grep 'No se ha detectado el servicio')"
 
   if [ "$resul" = "" ]; then
     echo "No se ha detectado el servicio, regresando al menu"
@@ -88,7 +88,7 @@ configure_options() {
   fi
 
   ip_local=$(getLocalIp)
-  ip_segment="$(getSegment '$ip_local')"
+  ip_segment="$(getSegment $ip_local)"
   prefix_local=$(getPrefix)
 
   if [ -f /etc/bind/named.conf.options ]; then
@@ -133,9 +133,9 @@ status_service() { # VERIFICAR SI EL SERVICIO ESTA INSTALADO ANTES
 
 configure_service() {
   ip_local=$(getLocalIp)
-  ip_segment="$(getSegment '$ip_local')"
+  ip_segment="$(getSegment $ip_local)"
 
-  if [ '$(validateIpConf "$ipLocal")' = "false" ]; then
+  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"

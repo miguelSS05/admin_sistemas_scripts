@@ -9,8 +9,6 @@ function validateEmpty {
     if ($value -eq "") {
         Write-Host "`nSe ha detectado un espacio vacio, saliendo del programa (variable: '$var')" -Foreground Red
         exit 1
-    } else {
-        Write-Host "`nNo se ha detectado vacio"
     }
 }
 
@@ -178,7 +176,7 @@ function validateTimeFormat {
 		[string]$text
 	)
 
-	$aux = getText $text
+	$text = $text.Trim()
 
 	if (!($aux -match '^(\d+\.)?([0-1]?[0-9]|2[0-3]):[0-5]?[0-9](:[0-5]?[0-9])?$')) {
 		Write-Host "`nNo se ha detectado un tiempo correto, formatos validos: (D.)?HH:MM:SS | (D.)?H:M:S | (D.)?HH:MM | (D.)?H:M" -Foreground Red

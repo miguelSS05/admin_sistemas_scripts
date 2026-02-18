@@ -24,11 +24,12 @@ $helpM="${helpM}-option (seleccionar opcion)`n"
 $helpM="${helpM}-install (confirmar instalacion)`n"
 $helpM="${helpM}-domain (nombre de dominio)`n" # Verificar sintaxis y ver estado del servicio
 $helpM="${helpM}-ttl (time to live)`n"
-$helpM="${helpM}-configureIp (numero serial)`n"
-$helpM="${helpM}-ip (colocar IP a configurar)`n"
+$helpM="${helpM}-configureIp (colocar nueva IP a configurar)`n"
+$helpM="${helpM}-ip (colocar IP del dominio)`n"
 
 if ($help) {
     Write-Host $helpM
+    exit 1
 }
 
 $color="yellow"
@@ -65,10 +66,16 @@ function changeConf {
         exit 1
     }
 
-    Add-DnsServerPrimaryZone -Name "$domain" -ZoneFile "$domain.dns"
-    Add-DnsServerResourceRecordA -Name "www" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" # Apuntar hacia www.dominio
-    Add-DnsServerResourceRecordA -Name "@" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" # Apuntar hacia el dominio raiz
+    Add-DnsServerPrimaryZone -Name "$domain" -ZoneFile "$domain.dns" -Confirm:$false
+    Add-DnsServerResourceRecordA -Name "www" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" -Confirm:$false # Apuntar hacia www.dominio
+    Add-DnsServerResourceRecordA -Name "@" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" -Confirm:$false # Apuntar hacia el dominio raiz
 
+    $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
+
+    if ($aux -eq $null) {
+        Write-Host "Se ha creado la zona $domain correctamente" -ForegroundColor green
+        exit 1
+    }
     #Add-DnsServerPrimaryZone -NetworkId "$segment/$prefix" -ZoneFile "$domain.dns" # Crear zona de busqueda inversa
 }
 
@@ -126,7 +133,7 @@ function deleteZone {
         exit 1
     }
 
-    Remove-DnsServerZone -ZoneName "$domain"
+    Remove-DnsServerZone -ZoneName "$domain" -Confirm:$false
 
     $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
 
