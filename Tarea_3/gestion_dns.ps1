@@ -1,0 +1,157 @@
+param (
+    [string] $option,
+    [switch] $install,
+    [string] $domain,
+    [string] $ttl,
+    [string] $configureIp,
+    [string] $ip
+)
+
+. ../Funciones/power_fun_par.ps1
+
+$color="yellow"
+$ipLocal=""
+
+function changeConf {
+    $ipLocal = getLocalIp
+
+    if ($ipLocal -eq "0") {
+        Write-Host "Se ha detectado una configuracion de IP invalida" -ForegroundColor red
+        exit 1
+    }
+
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+        exit 1
+	} 
+
+    validateEmpty "$domain" "Nombre de dominio"
+    usableIp "$ip" "IP del dominio"
+
+    $prefix= getLocalPrefix
+    $netmask= getNetmask $ip
+    $segment= getSegment $ip
+    $reverseSeg= getBackwardSegment $netmask $ip
+
+    $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
+
+    if ($aux -ne $null) {
+        Write-Host "Se ha detectado que existe una zona con ese nombre" -ForegroundColor red
+        exit 1
+    }
+
+    Add-DnsServerPrimaryZone -Name "$domain" -ZoneFile "$domain.dns"
+    Add-DnsServerResourceRecordA -Name "www" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" # Apuntar hacia www.dominio
+    Add-DnsServerResourceRecordA -Name "@" -ZoneName "$domain" -IPv4Address "$ip" -TimeToLive "$ttl" # Apuntar hacia el dominio raiz
+
+    #Add-DnsServerPrimaryZone -NetworkId "$segment/$prefix" -ZoneFile "$domain.dns" # Crear zona de busqueda inversa
+}
+
+function checkService {
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+
+	} else {
+        Write-Host "Se ha detectado el servicio DNS instalado" -Foreground $color
+    } 
+}
+
+function readZones {
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+
+	} else {
+        Write-Host "`n=== Zonas (dominios) registrados ===" -ForegroundColor $color
+        Get-DnsServerZone
+    } 
+}
+
+function checkService {
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+
+	} else {
+        Write-Host "Se ha detectado el servicio DNS instalado" -Foreground $color
+    } 
+}
+
+function monitoreo {
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+	} else {
+        Write-Host "`n=== Estado del servicio ===" -ForegroundColor $color
+        Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue | ft -Autosize
+    } 
+}
+
+function deleteZone {
+    $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
+
+    if ($aux -eq $null) {
+        Write-Host "No se ha detectado una zona con ese nombre" -ForegroundColor red
+        exit 1
+    }
+
+    Remove-DnsServerZone -ZoneName "$domain"
+
+    $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
+
+    if ($aux -eq $null) {
+        Write-Host "Se ha eliminado la zona $domain correctamente" -ForegroundColor green
+        exit 1
+    }
+}
+
+function configureIp {
+    $ipLocal = getLocalIp
+
+    if ($ipLocal -eq "0") {
+        Write-Host "Se ha detectado una configuracion de IP invalida" -ForegroundColor red
+    } else {
+        Write-Host "Se ha detectado una configuracion de IP valida" -ForegroundColor green
+        exit 1
+    }
+
+    usableIP $configureIp "Nueva IP"
+    restartIp $configureIp
+}
+
+function installService {
+	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+
+	if ($aux -eq $null) {
+        Write-Host "Se ha detectado que no se tiene instalado el DHCP Server" -Foregroundcolor "red"
+
+        if ($install) {
+            Write-Host "Iniciando instalacion..." -Foregroundcolor $color
+		    Install-WindowsFeature DNS -IncludeManagementTools	
+		    Write-Host "La instalacion ha finalizado correctamente" -Foregroundcolor "green"   
+        } else {
+            Write-Host "Use la bandera -install para activar la instalacion" -ForegroundColor $color
+        }
+
+	} else {
+        Write-Host "Se ha detectado el servicio DHCP instalado" -Foreground $color
+    } 
+}
+
+switch ($option) {
+    "1" {checkService; break;}
+	"2" {installService; break;}
+	"3" {monitoreo; break;}
+	"4" {changeConf; break;}
+    "5" {deleteZone; break;}
+    "6" {readZones break;}
+    "7" {configureIp break;}
+	default {Write-Host "Se ha detectado una opcion invalida, vuelve a intentarlo" -Foregroundcolor red}
+}

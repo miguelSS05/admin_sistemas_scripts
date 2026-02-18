@@ -47,7 +47,6 @@ function validateRange { # Entrada: 3 IPs | Verifica q la IP2 no se encuentre en
     }
 
     return $true
-
 }
 
 #Valida que no caiga en la primera/ultima IP
@@ -143,7 +142,7 @@ function validateSegment2 {
 
 function validateInt {
 	param (
-		[string]$text
+		[string]$
 	)
 
 	$aux = Read-Host -Prompt $text
@@ -268,7 +267,6 @@ function ConvertTo-IPv4Integer {
     $value = [System.BitConverter]::ToUInt32($bytes, 0)
 
     return $value
-
 } 
 
 function CompareIp {

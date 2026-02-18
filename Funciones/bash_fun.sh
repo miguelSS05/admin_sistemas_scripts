@@ -275,3 +275,15 @@ if [ "${1}" != "--source-only" ]; then
 	getText "Dame un valor" "var1"
 fi
 
+##### FUNCIONES PARA SCRIPTS CON PARAMETROS ######
+
+pValidateIp() { 
+  local aux="${v[$1]}"
+
+  v[$2]=$(echo $aux |  grep -P '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')
+
+  if [ "${v[$2]}" = "" ]; then
+	echo -e '\nNo se ha detectado el formato IPv4, vuelva a intentarlo'
+        v[$2]=$(echo $aux | grep -P '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')
+  fi
+}
