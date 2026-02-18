@@ -142,7 +142,8 @@ function validateSegment2 {
 
 function validateInt {
 	param (
-		[string]$aux
+		[string]$aux,
+        [string]$text
 	)
 
 	$aux = Read-Host -Prompt $text
@@ -344,5 +345,5 @@ function restartIp {
 
     $prefix = getPrefix $ip
     Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
-    New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip -Confirm:$false > $null 2>&1
+    New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip -PrefixLength $prefix -Confirm:$false > $null 2>&1
 }
