@@ -51,8 +51,9 @@ done
 
 configureIp() {
   ipLocal=$(getLocalIp)
+  resul=$(validateIpConf "$ipLocal")
 
-  if [ $(validateIpConf "$ipLocal") = "false" ]; then
+  if [ "$resul" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"
@@ -68,8 +69,9 @@ configureIp() {
 
 configure_options() {
   ipLocal=$(getLocalIp)
+  resul=$(validateIpConf "$ipLocal")
 
-  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
+  if [ "$resul" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"
@@ -133,9 +135,10 @@ status_service() { # VERIFICAR SI EL SERVICIO ESTA INSTALADO ANTES
 
 configure_service() {
   ip_local=$(getLocalIp)
-  ip_segment="$(getSegment $ip_local)"
+  resul=$(validateIpConf "$ipLocal")
+  #ip_segment="$(getSegment $ip_local)"
 
-  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
+  if [ "$resul" = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"

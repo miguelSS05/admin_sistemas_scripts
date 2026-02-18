@@ -179,8 +179,8 @@ function validateTimeFormat {
 
 	$var = $var.Trim()
 
-	if (!($text -match '^(\d+\.)?([0-1]?[0-9]|2[0-3]):[0-5]?[0-9](:[0-5]?[0-9])?$')) {
-		Write-Host "`nNo se ha detectado un tiempo correto, formatos validos: (D.)?HH:MM:SS | (D.)?H:M:S | (D.)?HH:MM | (D.)?H:M" -Foreground Red
+	if (!($var -match '^(\d+\.)?([0-1]?[0-9]|2[0-3]):[0-5]?[0-9](:[0-5]?[0-9])?$')) {
+		Write-Host "`nNo se ha detectado un tiempo correto, formatos validos: (D.)?HH:MM:SS | (D.)?H:M:S | (D.)?HH:MM | (D.)?H:M (variable: $text)" -Foreground Red
 		exit 1
 	}
 }
