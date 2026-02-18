@@ -133,7 +133,7 @@ function deleteZone {
         exit 1
     }
 
-    Remove-DnsServerZone -ZoneName "$domain" -Confirm:$false
+    Remove-DnsServerZone -ZoneName "$domain" -Force
 
     $aux = Get-DnsServerZone -ZoneName "$domain" -ErrorAction SilentlyContinue
 

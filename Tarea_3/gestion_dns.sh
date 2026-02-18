@@ -24,15 +24,15 @@ nueva_ip=""
 install="0"
 domain_name=""
 ttl=604800
-serial=0
-refresh=0
-retry=0
-expire=0
+serial=3
+refresh=604800
+retry=86400
+expire=2419200
 option=0
 confirm="0"
 
 # OBTENER PARAMETROS
-while getopts ":i :o: :d :t :s :r :n :c :h" flag; do
+while getopts ":i :o: :d: :t: :s: :r: :n: :c :h" flag; do
     case "${flag}" in
         o) option=$OPTARG ;;
         i) install="1" ;; 
@@ -52,7 +52,7 @@ done
 configureIp() {
   ipLocal=$(getLocalIp)
 
-  if [ "$(validateIpConf $ipLocal)" = "false" ]; then
+  if [ $(validateIpConf "$ipLocal") = "false" ]; then
     if [ "$nueva_ip" = "" ]; then
       echo "Se ha detectado una configuracion de IP invalida"
       echo "Para seleccionar una nueva IP use la bandera -n"
