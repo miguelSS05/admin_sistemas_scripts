@@ -142,7 +142,7 @@ function validateSegment2 {
 
 function validateInt {
 	param (
-		[string]$
+		[string]$aux
 	)
 
 	$aux = Read-Host -Prompt $text
