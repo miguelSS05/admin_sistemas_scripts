@@ -142,7 +142,6 @@ function validateSegment2 {
 
 function validateInt {
 	param (
-		[string]$aux,
         [string]$text
 	)
 
