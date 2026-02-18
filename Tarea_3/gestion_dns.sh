@@ -272,9 +272,9 @@ delete_zone() {
 
   # Buscar donde tiene guardados los registros
   filedb=$(awk -v start="$start" -v end="$end" '
-  $0 ~ start {skip=0}
-  $0 ~ end {skip=1; next}
-  skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
+  $0 ~ start {skip=1}
+  skip && $0 ~ end {skip=0; next}
+  !skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
 
   if [ -f $filedb ] && [ -n $filedb ]; then
       rm $filedb 
@@ -286,7 +286,7 @@ delete_zone() {
   # Excluir a un dominio en especifico del archivo de zona
   awk -v start="$start" -v end="$end" '
   $0 ~ start {skip=1}
-  !erased && $0 ~ end {skip=0; erased=1; next}
+  skip && $0 ~ end {skip=0; next}
   !skip' /etc/bind/named.conf.local > temp.txt && cat temp.txt | awk '/zone|{|}|file|type/' > /etc/bind/named.conf.local && rm temp.txt
 
   # while read line; do
