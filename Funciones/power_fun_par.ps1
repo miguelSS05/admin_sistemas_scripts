@@ -143,10 +143,10 @@ function getPrefix {
 }
 
 function getLocalIp {
-    $aux = Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" | Select-Object IPAddress | findstr "^[0-9]"
+    $aux = Get-NetIPAddress -InterfaceAlias "red_sistemas" -AddressFamily "IPv4" -ErrorAction SilentlyContinue | Select-Object IPAddress | findstr "^[0-9]"
 
     if (!($aux -match '^\s*(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\s*$')) {
-		Write-Host "`nNo se ha detectado una IPv4 local v�lida" -Foreground Red
+		Write-Host "`nNo se ha detectado una IPv4 local valida" -Foreground Red
 		return "0"
 	}
 
@@ -171,6 +171,19 @@ function getSegment {
     } else {
         # Nada
     }
+}
+
+function validateTimeFormat {
+	param (
+		[string]$text
+	)
+
+	$aux = getText $text
+
+	if (!($aux -match '^(\d+\.)?([0-1]?[0-9]|2[0-3]):[0-5]?[0-9](:[0-5]?[0-9])?$')) {
+		Write-Host "`nNo se ha detectado un tiempo correto, formatos validos: (D.)?HH:MM:SS | (D.)?H:M:S | (D.)?HH:MM | (D.)?H:M" -Foreground Red
+		exit 1
+	}
 }
 
 function restartIp {
