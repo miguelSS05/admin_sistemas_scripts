@@ -98,7 +98,7 @@ configure_options() {
 
   if [ -f /etc/bind/named.conf.options ]; then
     chmod -R 755 /etc/bind/named.conf.options
-    chwon -R bind:bind /etc/bind/named.conf.options
+    chown -R bind:bind /etc/bind/named.conf.options
     options="options {\n"
     options="${options}  directory \"/var/cache/bind\";\n"
     options="${options}  dnssec-validation auto;\n"
