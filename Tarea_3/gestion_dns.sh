@@ -19,7 +19,9 @@ help="${help}-t (time to live)\n"
 help="${help}-s (numero serial)\n"
 help="${help}-r (refresh)\n"
 help="${help}-n (configurar nueva ip)\n"
+help="${help}-v (colocar ip para el dominio)\n"
 
+ip=""
 nueva_ip=""
 install="0"
 domain_name=""
@@ -168,7 +170,7 @@ configure_service() {
   filedir="^[[:space:]]*file[[:space:]]*\""
   filedb=""
 
-  if [ -n "$(awk '/$start/' /etc/bind/named.conf.local)" ]; then # -n non-zero length (no nulo)
+  if [ -n "$(awk /$start/ /etc/bind/named.conf.local)" ]; then # -n non-zero length (no nulo)
     echo -e "\nSe ha encontrado el dominio(zona) $domain_name"
     if [ "$confirm" = "0" ]; then
       echo -e "Para sobreescribir use la bandera -c (confirmar)\n"
@@ -257,7 +259,7 @@ delete_zone() {
     exit 1
   fi
 
-  if [ -z "$(awk '/$start/' /etc/bind/named.conf.local)" ]; then # -z zero length (nulo)
+  if [ -z "$(awk /$start/ /etc/bind/named.conf.local)" ]; then # -z zero length (nulo)
     echo -e "\nNo se ha encontrado el dominio(zona) $domain_name"
     exit 1
   fi
