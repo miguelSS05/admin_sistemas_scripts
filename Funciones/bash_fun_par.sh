@@ -2,7 +2,7 @@
 
 validateEmpty() {
    local regex='\S+'
-  if [[ $1 =~ $regex ]]; then
+  if ! [[ "$1" =~ $regex ]]; then
     echo "Se ha detectado un espacio vacio, saliendo del programa (variable $2)"
     exit 1
   fi  

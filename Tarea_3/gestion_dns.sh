@@ -84,7 +84,7 @@ configure_options() {
 
   resul="$(check_service 'bind9' | grep 'No se ha detectado el servicio')"
 
-  if [ "$resul" = "" ]; then
+  if ! [ "$resul" = "" ]; then
     echo "No se ha detectado el servicio, regresando al menu"
     return 1
   fi
@@ -125,17 +125,17 @@ status_service() { # VERIFICAR SI EL SERVICIO ESTA INSTALADO ANTES
     exit 1
 	fi
 
-  if [ "$(named-checkconfig)" = "" ]; then
+  if [ "$(named-checkconf)" = "" ]; then
     echo  "No se han detectado errores de sintaxis"
   else 
     echo "Se detectaron los siguientes errores de sintaxis"
-    named-checkconfig
+    named-checkconf
   fi
 }
 
 configure_service() {
   ip_local=$(getLocalIp)
-  resul=$(validateIpConf "$ipLocal")
+  resul=$(validateIpConf "$ip_local")
   #ip_segment="$(getSegment $ip_local)"
 
   if [ "$resul" = "false" ]; then
@@ -268,7 +268,8 @@ delete_zone() {
   $0 ~ end {skip=1; next}
   skip' /etc/bind/named.conf.local | awk '/file/ {print $2}' | cut -d "\"" -f2)
 
-  if [ -f $filedb ]; then
+  if [ -f $filedb ] && [ -n $filedb ]; then
+      rm $filedb
       cat $filedb
   else
       echo -e "No se encontraron los registros para la zona $domain_name"
@@ -326,7 +327,7 @@ case "$option" in
   3) status_service ;;
   4) configure_service ;;
   5) delete_zone ;;
-  6) read_zone ;;
+  6) read_zones ;;
   7) configureIp ;;
 
   *) echo "Opcion invalida" ;;
