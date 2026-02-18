@@ -94,14 +94,14 @@ configure_options() {
   prefix_local=$(getPrefix)
 
   if [ -f /etc/bind/named.conf.options ]; then
-    $options="options {\n"
-    $options="${options}  directory \"/var/cache/bind\";\n"
-    $options="${options}  dnssec-validation auto;\n"
-    $options="${options}  listen-on {${ip_segment}/${prefix_local}; localhost; };\n"
-    $options="${options}  allow-query {{${ip_segment}/${prefix_local}; localhost; };\n"
-    $options="${options}  recursion yes;\n"
-    $options="${options}  allow-recursion {{${ip_segment}/${prefix_local}; localhost; };\n"
-    $options="${options}};"
+    options="options {\n"
+    options="${options}  directory \"/var/cache/bind\";\n"
+    options="${options}  dnssec-validation auto;\n"
+    options="${options}  listen-on {${ip_segment}/${prefix_local}; localhost; };\n"
+    options="${options}  allow-query {{${ip_segment}/${prefix_local}; localhost; };\n"
+    options="${options}  recursion yes;\n"
+    options="${options}  allow-recursion {{${ip_segment}/${prefix_local}; localhost; };\n"
+    options="${options}};"
 
     echo -e $options > /etc/bind/named.conf.options
   else 
@@ -110,7 +110,7 @@ configure_options() {
   fi
 
   if [ -f /etc/default/named ]; then
-    sed 's/OPTIONS="-u bind"/OPTIONS="-u bind -4"/' /etc/default/named
+    sed -i 's/OPTIONS="-u bind"/OPTIONS="-u bind -4"/' /etc/default/named
   else 
     echo "No se ha encontrado el archivo /etc/default/names"
   fi
@@ -168,7 +168,7 @@ configure_service() {
   filedir="^[[:space:]]*file[[:space:]]*\""
   filedb=""
 
-  if [ -n '$(awk "/$start/" /etc/bind/named.conf.local)' ]; then # -n non-zero length (no nulo)
+  if [ -n "$(awk '/$start/' /etc/bind/named.conf.local)" ]; then # -n non-zero length (no nulo)
     echo -e "\nSe ha encontrado el dominio(zona) $domain_name"
     if [ "$confirm" = "0" ]; then
       echo -e "Para sobreescribir use la bandera -c (confirmar)\n"
@@ -178,11 +178,11 @@ configure_service() {
     fi
   else
     cat << EOF >> /etc/bind/named.conf.local #
-
-    zone \"$domain_name\" {
-      type master;
-      file \"/var/cache/bind/db.$domain_name\";
-    };
+    
+zone "$domain_name" {
+  type master;
+  file "/var/cache/bind/db.$domain_name";
+};
 
 EOF
     # sobreescribir aqui
@@ -215,18 +215,18 @@ EOF
 
   cat << EOF > /var/cache/bind/db.$domain_name
 
-  \$TTL $ttl
+\$TTL $ttl
 
-  @          IN          SOA          ns1.$domain_name. admin.$domain_name. (
+@          IN          SOA          ns1.$domain_name. admin.$domain_name. (
                                       $serial;
                                       $refresh;
                                       $retry;
                                       $expire;
                                       $ttl; )
-  @          IN          NS           ns1.$domain_name.
-  @          IN          A            $ipLocal
-  ns1        IN          A            $ipLocal
-  www        IN          A            $ipLocal
+@          IN          NS           ns1.$domain_name.
+@          IN          A            $ipLocal
+ns1        IN          A            $ipLocal
+www        IN          A            $ipLocal
 
 EOF
 
@@ -257,7 +257,7 @@ delete_zone() {
     exit 1
   fi
 
-  if [ -z '$(awk "/$start/" /etc/bind/named.conf.local)' ]; then # -z zero length (nulo)
+  if [ -z "$(awk '/$start/' /etc/bind/named.conf.local)" ]; then # -z zero length (nulo)
     echo -e "\nNo se ha encontrado el dominio(zona) $domain_name"
     exit 1
   fi
