@@ -10,22 +10,22 @@ param (
 
 . ../Funciones/power_fun_par.ps1
 
-helpM="--- Opciones ---`n`n"
-helpM="${helpM}1) Verificar existencia del servicio`n"
-helpM="${helpM}2) Instalar servicio`n"
-helpM="${helpM}3) Monitoreo`n" # Verificar sintaxis y ver estado del servicio
-helpM="${helpM}4) Agregar zona`n"
-helpM="${helpM}5) Eliminar zona`n"
-helpM="${helpM}6) Consultar lista de zonas (dominios)`n"
-helpM="${helpM}7) Verificar configuración IP`n"
-helpM="${helpM}--- Banderas ---`n`n"
-helpM="${helpM}-help (mostrar este mensaje)`n"
-helpM="${helpM}-option (seleccionar opcion)`n"
-helpM="${helpM}-install (confirmar instalacion)`n"
-helpM="${helpM}-domain (nombre de dominio)`n" # Verificar sintaxis y ver estado del servicio
-helpM="${helpM}-ttl (time to live)`n"
-helpM="${helpM}-configureIp (numero serial)`n"
-helpM="${helpM}-ip (colocar IP a configurar)`n"
+$helpM="--- Opciones ---`n`n"
+$helpM="${helpM}1) Verificar existencia del servicio`n"
+$helpM="${helpM}2) Instalar servicio`n"
+$helpM="${helpM}3) Monitoreo`n" # Verificar sintaxis y ver estado del servicio
+$helpM="${helpM}4) Agregar zona`n"
+$helpM="${helpM}5) Eliminar zona`n"
+$helpM="${helpM}6) Consultar lista de zonas (dominios)`n"
+$helpM="${helpM}7) Verificar configuración IP`n"
+$helpM="${helpM}--- Banderas ---`n`n"
+$helpM="${helpM}-help (mostrar este mensaje)`n"
+$helpM="${helpM}-option (seleccionar opcion)`n"
+$helpM="${helpM}-install (confirmar instalacion)`n"
+$helpM="${helpM}-domain (nombre de dominio)`n" # Verificar sintaxis y ver estado del servicio
+$helpM="${helpM}-ttl (time to live)`n"
+$helpM="${helpM}-configureIp (numero serial)`n"
+$helpM="${helpM}-ip (colocar IP a configurar)`n"
 
 if ($help) {
     Write-Host $helpM
