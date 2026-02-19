@@ -174,7 +174,7 @@ install_service() {
 
 		if [ "$2" = "1" ]; then
 			echo "Iniciando instalacion"
-			apt-get install "$1" > /dev/null
+			apt-get install -y "$1" > /dev/null
 			echo "Se ha terminado de instalar el servicio $1"
 		elif [ "$2" = "0" ]; then
 			echo "Para instalar el servicio haz uso de la bandera -i"
