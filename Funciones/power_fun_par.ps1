@@ -242,3 +242,32 @@ function getOne {
     return [string]$octet1+"."+[string]$octet2+"."+[string]$octet3+"."+[string]$octet4
 
 }
+
+function ConvertTo-IPv4Integer {
+    param(
+        [string]$IPv4Address
+    )
+            
+    $ipAddress = [IPAddress]::Parse($IPv4Address)            
+    $bytes = $ipAddress.GetAddressBytes()
+    [Array]::Reverse($bytes)
+    $value = [System.BitConverter]::ToUInt32($bytes, 0)
+
+    return $value
+} 
+
+function CompareIp {
+    param (
+        [string]$ip1,
+        [string]$ip2
+    )
+    
+    $value1 = ConvertTo-IPv4Integer $ip1
+    $value2 = ConvertTo-IPv4Integer $ip2
+
+    if ($value1 -gt $value2) {
+        return $true
+    } else {
+        return $false
+    }
+}
