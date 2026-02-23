@@ -48,7 +48,15 @@ change_conf() {
     ip_inicial_seg=$(getSegment "$ip_inicial")
     ip_inicial_val=$(getIpValue "$ip_inicial")
     ip_inicial_mask=$(getNetmask "$ip_inicial")
-	
+
+		usableIp "$ip_final" "IP Final"
+		ip_final_seg=$(getSegment "$ip_final")
+		ip_final_val=$(getIpValue "$ip_final")
+
+		validateInt "$tiempo" "Tiempo de concesion"	
+		usableIp "$puerta_en" "Puerta de enlace" "true"
+		usableIp "$dns" "DNS Primario" "true"
+		usableIp "$dns2" "DNS Secundario" "true"
 
 	if [ $ip_inicial_seg != $computerIp_seg ]; then
 		echo "Se ha detectado que el segmento de las IPs no coinciden con la IP estática del servidor DHCP"
@@ -62,11 +70,6 @@ change_conf() {
 		ip_inicial_val=$(sumOne ip_ini)
 	fi
 
-
-	usableIp "$ip_final" "IP Final"
-  ip_final_seg=$(getSegment "$ip_final")
-  ip_final_val=$(getIpValue "$ip_final")
-
 	if [ $ip_ini_val -gt $ip_fin_val ]; then
 		echo "Se ha detectado que la ip inicial es mayor que la ip final"
 		echo "Saliendo..."
@@ -79,8 +82,6 @@ change_conf() {
 		return 1
 	fi
 
-	usableIp "$puerta_en" "Puerta de enlace" "true"
-
 	if [ "$puerta_en" != "" ]; then
         puerta_en_seg=$(getSegment "$puerta_en")
 		if [ "$ip_final_seg" != "$puerta_en_seg" ] || [ "$ip_inicial_seg" != "$puerta_en_seg" ]; then
@@ -90,8 +91,6 @@ change_conf() {
 		fi
 	fi
 
-	usableIp "$dns" "DNS Primario" "true"
-
 	config="# Descripcion(Ambito): $scope"
 	config="$config\nsubnet $ip_inicial_seg netmask $ip_inicial_mask {"
 	config="$config\n        range $ip_inicial $ip_final;"
@@ -99,8 +98,6 @@ change_conf() {
 	if [ "$dns" != "" ]; then
 		config="$config\n        option domain-name-servers $dns"		
 	fi
-
-	usableIp "$dns2" "DNS Secundario" "true"
 
 	if [ "$dns2" != "" ]; then
 		if [ "$dns" != "" ]; then
@@ -117,8 +114,6 @@ change_conf() {
 		config="$config\n        option routers $puerta_en;"	
 	fi
 
-	validateInt "Ingresa el tiempo de consecion (en segundos): " leasetime
-
 	config="$config\n        default-lease-time $tiempo;"
 	config="$config\n        max-lease-time $tiempo;"
 	config="$config\n}"
@@ -130,7 +125,9 @@ change_conf() {
 }
 
 configure_interface() {
-	sed -i  's/INTERFACESv4=""/INTERFACESv4="red_sistemas"/' /etc/default/isc-dhcp-server 
+	if [ -f /etc/default/isc-dhcp-server ]; then
+		sed -i  's/INTERFACESv4=""/INTERFACESv4="red_sistemas"/' /etc/default/isc-dhcp-server 
+	fi
 }
 
 monitoreo_dhcp() {
