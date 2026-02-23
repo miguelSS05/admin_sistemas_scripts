@@ -19,7 +19,7 @@ function validateIp {
         [boolean]$opt
 	)
 
-    #if ((($ip -eq "N") -or ($ip -eq "n")) -and ($opt -eq $true)) {return $aux}
+    if (($ip -eq "") -and ($opt -eq $true)) {return $aux}
 
     if (!($ip -match '^\s*(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5]))\.){3}(((10[0-9]|1?[1-9]?[0-9])|(2[0-4][0-9]|25[0-5])))\s*$')) {
         Write-Host "`nNo se ha detectado el formato IPv4, saliendo del programa (variable: '$var')" -Foreground Red

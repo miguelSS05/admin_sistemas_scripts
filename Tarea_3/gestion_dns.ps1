@@ -102,16 +102,16 @@ function readZones {
     } 
 }
 
-function checkService {
-	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
+#function checkService {
+#	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue
 
-	if ($aux -eq $null) {
-		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
+#	if ($aux -eq $null) {
+#		Write-Host "Se ha detectado que no se tiene instalado el DNS Server" -Foregroundcolor "red"
 
-	} else {
-        Write-Host "Se ha detectado el servicio DNS instalado" -Foreground $color
-    } 
-}
+#	} else {
+#        Write-Host "Se ha detectado el servicio DNS instalado" -Foreground $color
+#    } 
+#}
 
 function monitoreo {
 	$aux = Get-Service -Name "DNS Server" -ErrorAction SilentlyContinue

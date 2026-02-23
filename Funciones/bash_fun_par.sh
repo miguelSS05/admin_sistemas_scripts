@@ -47,6 +47,9 @@ banIp() {
 }
 
 usableIp() {
+	if [ "$3" = "true" ] && [ "$1" = "" ]; then
+		return 1
+	fi
   validateIp "$1" "$2"
   banIp $1
 }
@@ -81,8 +84,15 @@ getNetmask() {
 
 getIpValue() {
   IFS='.' read -ra octet <<< "$1"
-
 	echo $((${octet[0]}*256*256*256 + ${octet[1]}*256*256 + ${octet[2]}*256 + ${octet[3]}))
+}
+
+compareIp() {
+	if [ $1 -gt $2 ]; then
+		echo "true"
+	else
+		echo "false"
+	fi
 }
 
 getLocalIp() {
@@ -184,6 +194,15 @@ install_service() {
 	else
 		echo "Se ha detectado el servicio $1"
 	fi	
+}
+
+restart_service() {
+	if [ "$(dpkg -l $1 2>&1 | grep 'ii')" = "" ]; then
+		echo -e "\nNo se ha detectado el servicio isc-dhcp-server"
+	else
+		echo "Reiniciando servicio..."
+		systemctl restart "$1"
+	fi
 }
 
 
