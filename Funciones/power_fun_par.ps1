@@ -69,6 +69,8 @@ function usableIp {
         [boolean]$opt
 	)
 
+    if (($ip -eq "") -AND ($opt)) { return $ip; }
+
     validateIp "$ip" "$var" $opt
     banIp "$ip" "$var"
 }
