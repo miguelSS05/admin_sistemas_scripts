@@ -16,6 +16,8 @@ param (
 
 . ../Funciones/power_fun_par.ps1
 
+verificarAdmin
+
 $helpM="--- Opciones ---`n`n"
 $helpM="${helpM}--- Script SSH ---`n`n"
 $helpM="${helpM}1) Verificar existencia del servicio SSH`n"

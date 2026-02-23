@@ -205,6 +205,13 @@ restart_service() {
 	fi
 }
 
+verificar_root() {
+if [ "$EUID" -ne 0 ]; then 
+	echo "Please run as root"
+  exit
+fi
+}
+
 
 #if [ "${1}" != "--source-only" ]; then
 #  ip="150.255.255.255"

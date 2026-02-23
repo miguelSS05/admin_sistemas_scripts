@@ -273,3 +273,13 @@ function CompareIp {
         return $false
     }
 }
+
+function verificarAdmin {
+    $resul = whoami
+    $resul = $resul -split "\"
+
+    if ($resul[1] -ne "administrator") {
+        Write-Host "Se ha detectado que no se ha iniciado con la cuenta administrator" -Foregroundcolor "red"
+        exit 1
+    }
+}
