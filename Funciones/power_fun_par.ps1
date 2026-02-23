@@ -69,8 +69,8 @@ function usableIp {
         [boolean]$opt
 	)
 
-    validateIp $ip $var $opt
-    banIp $ip $var
+    validateIp "$ip" "$var" $opt
+    banIp "$ip" "$var"
 }
 
 function getLocalPrefix {
