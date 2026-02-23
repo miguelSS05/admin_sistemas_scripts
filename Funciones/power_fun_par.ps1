@@ -194,3 +194,19 @@ function restartIp {
     Remove-NetIPAddress -InterfaceIndex 2 -Confirm:$false
     New-NetIPAddress -InterfaceIndex 2 -IPAddress $ip -PrefixLength $prefix -Confirm:$false > $null 2>&1
 }
+
+function validateSegment1 {
+    param (
+        [string] $seg1,
+        [string] $seg2,
+        [string] $text
+    )
+
+    # Mismo segmento
+    if ($seg1 -ne $seg2) {
+        Write-Host $text -ForegroundColor Red
+        Return $false
+    }
+
+    Return $true
+}

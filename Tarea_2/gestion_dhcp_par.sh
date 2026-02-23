@@ -12,7 +12,7 @@ dns2=""
 getLocalIp=""
 confirm="0"
 ambito=""
-tiempo=""
+tiempo=0
 
 while getopts ":i :o: :d: :t: :s: :e: :g: :c :a: :t:" flag; do
     case "${flag}" in
@@ -67,10 +67,10 @@ change_conf() {
         fi
 
 		restart_ip "$ip_inicial"
-		ip_inicial_val=$(sumOne ip_ini)
+		ip_inicial_val=$(sumOne "$ip_ini")
 	fi
 
-	if [ $ip_ini_val -gt $ip_fin_val ]; then
+	if [ $ip_inicial_val -gt $ip_final_val ]; then
 		echo "Se ha detectado que la ip inicial es mayor que la ip final"
 		echo "Saliendo..."
 		return 1
