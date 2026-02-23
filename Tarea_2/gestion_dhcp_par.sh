@@ -12,7 +12,7 @@ dns2=""
 getLocalIp=""
 confirm="0"
 ambito=""
-tiempo=0
+tiempo=10000
 
 while getopts ":i :o: :d: :t: :s: :e: :g: :c :a: :t:" flag; do
     case "${flag}" in
@@ -67,7 +67,8 @@ change_conf() {
         fi
 
 		restart_ip "$ip_inicial"
-		ip_inicial_val=$(sumOne "$ip_ini")
+		ip_inicial=$(sumOne "$ip_inicial")
+		ip_inicial_val=$(getIpValue "$ip_inicial")
 	fi
 
 	if [ $ip_inicial_val -gt $ip_final_val ]; then

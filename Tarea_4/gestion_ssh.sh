@@ -49,7 +49,7 @@ puerta_en=""
 confirm="0"
 
 # OBTENER PARAMETROS
-while getopts ":i :o: :d: :t: :s: :r: :n: :c :h :v: :b:" flag; do
+while getopts ":i :o: :d: :t: :s: :r: :n: :c :h :v: :b: :g:" flag; do
     case "${flag}" in
         o) option=$OPTARG ;;
         i) install="1" ;; 
