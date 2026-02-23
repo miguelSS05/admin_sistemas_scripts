@@ -10,7 +10,8 @@ param (
     [string] $ip2,
     [string] $dns1,
     [string] $dns2,
-    [string] $gateway
+    [string] $gateway,
+    [string] $scope
 )
 
 . ../Funciones/power_fun_par.ps1
@@ -39,6 +40,7 @@ $helpM="${helpM}-option (seleccionar opcion)`n"
 $helpM="${helpM}-install (confirmar instalacion)`n"
 $helpM="${helpM}-domain (nombre de dominio)`n" # Verificar sintaxis y ver estado del servicio
 $helpM="${helpM}-ttl (time to live)`n"
+$helpM="${helpM}-scope (ambito)`n"
 $helpM="${helpM}-leasetiempo (Tiempo de concesiones)`n"
 $helpM="${helpM}-ip1 (colocar IP del dominio | colocar IP inicial del rango DHCP)`n"
 $helpM="${helpM}-ip2 (colocar IP final del rango DHCP)`n"
@@ -100,9 +102,9 @@ switch ($option) {
         }
     "6" {
         if ($confirm) {
-            ../Tarea_2/gestion_dhcp_par.ps1 -o 3 -confirm -ip1 $ip1 -ip2 $ip2 -dns1 $dns1 -dns2 $dns2 -gateway $gateway -leasetime $leasetime
+            ../Tarea_2/gestion_dhcp_par.ps1 -o 3 -confirm -scope $scope -ip1 $ip1 -ip2 $ip2 -dns1 $dns1 -dns2 $dns2 -gateway $gateway -leasetime $leasetime
         } else {
-            ../Tarea_2/gestion_dhcp_par.ps1 -o 3 -ip1 $ip1 -ip2 $ip2 -dns1 $dns1 -dns2 $dns2 -gateway $gateway -leasetime $leasetime
+            ../Tarea_2/gestion_dhcp_par.ps1 -o 3 -scope $scope -ip1 $ip1 -ip2 $ip2 -dns1 $dns1 -dns2 $dns2 -gateway $gateway -leasetime $leasetime
         }
         break;}
     "7" {../Tarea_2/gestion_dhcp_par.ps1 -o 4; break;}

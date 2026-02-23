@@ -92,6 +92,11 @@ case "$option" in
   check_service "openssh-server"
   ;;
   2)
+  if ! [ "$(dpkg -l 'openssh-server' 2>&1 | grep 'ii')" = "" ]; then
+		echo -e "\nSe ha detectado el servicio openssh-server"
+    exit 1
+	fi
+
   install_service "openssh-server" "$install"
 
   if [ -f /etc/ssh/sshd_config ]; then
@@ -122,9 +127,9 @@ case "$option" in
   ;;
   6) 
   if [ "$confirm" = "1" ]; then
-  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -c -s "$ip" -b "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
+  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -c -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
   else
-  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -s "$ip" -b "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
+  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
   fi
   ;;
   7) 
