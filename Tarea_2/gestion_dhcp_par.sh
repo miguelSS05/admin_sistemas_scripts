@@ -14,8 +14,6 @@ confirm="0"
 ambito=""
 tiempo=10000
 
-verificar_root
-
 while getopts ":i :o: :d: :t: :s: :e: :g: :c :a: :p: :q:" flag; do
     case "${flag}" in
         a) ambito=$OPTARG ;;

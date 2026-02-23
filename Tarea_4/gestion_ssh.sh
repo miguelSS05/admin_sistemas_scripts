@@ -2,6 +2,8 @@
 
 source ../Funciones/bash_fun_par.sh # Funcion parametros
 
+verificar_root
+
 help="--- Opciones ---\n\n"
 help="${help}--- Script SSH---\n\n"
 help="${help}1) Verificar instalacion del servicio SSH server\n"
