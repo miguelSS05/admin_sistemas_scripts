@@ -14,7 +14,7 @@ confirm="0"
 ambito=""
 tiempo=10000
 
-while getopts ":i :o: :d: :t: :s: :e: :g: :c :a: :t:" flag; do
+while getopts ":i :o: :d: :t: :s: :e: :g: :c :a: :p: :q:" flag; do
     case "${flag}" in
         a) ambito=$OPTARG ;;
         c) confirm="1" ;;

@@ -210,3 +210,35 @@ function validateSegment1 {
 
     Return $true
 }
+
+function getOne {
+    param (
+        [string] $ip
+    )
+    $octets = $ip -split "\."
+
+    $octet1=[int]$octets[0]
+    $octet2=[int]$octets[1]
+    $octet3=[int]$octets[2]
+    $octet4=[int]$octets[3]
+
+    $octet4 = $octet4 + 1
+
+    if ($octet4 -ge 256) {
+        $octet3 = $octet3+1        
+        $octet4 = 0
+    }
+
+    if ($octet3 -ge 256) {
+        $octet2 = $octet2+1        
+        $octet3 = 0
+    }
+
+    if ($octet2 -ge 256) {
+        $octet1 = $octet1+1        
+        $octet2 = 0
+    }
+
+    return [string]$octet1+"."+[string]$octet2+"."+[string]$octet3+"."+[string]$octet4
+
+}
