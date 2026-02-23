@@ -13,7 +13,7 @@ help="${help}4) Verificar instalacion del servicio DHCP\n"
 help="${help}5) Instalar servicio DHCP\n"
 help="${help}6) Configurar servicio DHCP\n"
 help="${help}7) Monitoreo servicio DHCP\n"
-help="${help}8) Reniciar servicio DHCP\n\n"
+help="${help}8) Reniciar servicio DHCP\n"
 help="${help}\n--- Script Gestion DNS ---\n\n"
 help="${help}9) Verificar instalacion del servicio DNS\n"
 help="${help}10) Instalar servicio DNS\n"
@@ -108,27 +108,27 @@ case "$option" in
     restart_service "ssh"
 	fi
   ;;
-  3) ../Tarea_1/check_status.sh
+  3) bash ../Tarea_1/check_status.sh
   ;; # BUSCAR INSTALAR bind9, bind9-doc, bind9-utils
   4) 
   check_service "isc-dhcp-server"
   ;;
   5) 
   if [ "$install" = "1" ]; then
-    ../Tarea_2/gestion_dhcp_par.sh -o 2 -i -n "$nueva_ip"
+    bash ../Tarea_2/gestion_dhcp_par.sh -o 2 -i -n "$nueva_ip"
   else
-    ../Tarea_2/gestion_dhcp_par.sh -o 2  -n "$nueva_ip"
+    bash ../Tarea_2/gestion_dhcp_par.sh -o 2  -n "$nueva_ip"
   fi
   ;;
   6) 
   if [ "$confirm" = "1" ]; then
-  ../Tarea_2/gestion_dhcp_par.sh -o 3 -c -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
+  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -c -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
   else
-  ../Tarea_2/gestion_dhcp_par.sh -o 3 -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
+  bash ../Tarea_2/gestion_dhcp_par.sh -o 3 -s "$ip" -e "$ip_final" -g "$puerta_en" -p "$serial" -q "$refresh" -t "$ttl"
   fi
   ;;
   7) 
-  ../Tarea_2/gestion_dhcp_par.sh -o 4 -n "$nueva_ip" ;;
+  bash ../Tarea_2/gestion_dhcp_par.sh -o 4 -n "$nueva_ip" ;;
   8) restart_service "isc-dhcp-server" ;;
   9)
   check_service "bind9"
@@ -137,26 +137,26 @@ case "$option" in
   ;;
   10)
   if [ "$install" = "1" ]; then
-  ../Tarea_3/gestion_dns.sh -o 2 -i -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 2 -i -n "$nueva_ip"
   else
-  ../Tarea_3/gestion_dns.sh -o 2 -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 2 -n "$nueva_ip"
   fi
   ;;
   11)
-  ../Tarea_3/gestion_dns.sh -o 3 -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 3 -n "$nueva_ip"
   ;;
   12)
   if [ "$confirm" = "1" ]; then
-  ../Tarea_3/gestion_dns.sh -o 4 -c -d "$domain_name" -v "$ip" -s "$serial" -r "$refresh" -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 4 -c -d "$domain_name" -v "$ip" -s "$serial" -r "$refresh" -n "$nueva_ip"
   else
-  ../Tarea_3/gestion_dns.sh -o 4 -d "$domain_name" -v "$ip" -s "$serial" -r "$refresh" -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 4 -d "$domain_name" -v "$ip" -s "$serial" -r "$refresh" -n "$nueva_ip"
   fi
   ;;
   13)
-  ../Tarea_3/gestion_dns.sh -o 5 -d "$domain_name" -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 5 -d "$domain_name" -n "$nueva_ip"
   ;;
   14)
-  ../Tarea_3/gestion_dns.sh -o 6 -n "$nueva_ip"
+  bash ../Tarea_3/gestion_dns.sh -o 6 -n "$nueva_ip"
   ;;
 
   *) echo "Opcion invalida" ;;

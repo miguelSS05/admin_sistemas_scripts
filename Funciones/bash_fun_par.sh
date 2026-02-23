@@ -198,7 +198,7 @@ install_service() {
 
 restart_service() {
 	if [ "$(dpkg -l $1 2>&1 | grep 'ii')" = "" ]; then
-		echo -e "\nNo se ha detectado el servicio isc-dhcp-server"
+		echo -e "\nNo se ha detectado el servicio $1"
 	else
 		echo "Reiniciando servicio..."
 		systemctl restart "$1"
