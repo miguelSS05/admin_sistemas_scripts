@@ -283,3 +283,44 @@ function verificarAdmin {
         exit 1
     }
 }
+
+function validateEmptyArray {
+    param (
+        [array] $array
+    )
+
+    foreach($element in $array) {
+        if ($element -eq $null) {
+            Write-Host "Se ha detectado un valor vacio en el arreglo" -Foreground red
+            exit 1
+        }
+    }
+}
+
+function validateGroupNumber {
+    param (
+        [array] $array
+    )
+
+    foreach($element in $array) {
+        if (($element -ne "1") -AND ($element -ne "2")) {
+            Write-Host "Se ha detectado un grupo que no es ni 1 ni 2" -Foreground red
+            exit 1
+        }
+    }
+}
+
+function validateUserCreated {
+    param (
+        [array] $array
+    )
+
+    foreach($element in $array) {
+        $aux = Get-LocalUser -Name $element -ErrorAction SilentlyContinue
+
+        if ($aux -ne $null) {
+            Write-Host "Se ha encontrado que el usuario '$aux' ya ha sido creado"
+            exit 1
+        }
+    }
+}

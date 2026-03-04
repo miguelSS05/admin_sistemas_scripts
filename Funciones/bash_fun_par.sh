@@ -212,6 +212,76 @@ if [ "$EUID" -ne 0 ]; then
 fi
 }
 
+validateEmptyArray() {
+  local array=("$@")
+  local i=0
+  local count=${#array[@]}
+
+  while [ $i -lt $count ]; do
+    if [ -z "${array[$i]}" ]; then
+      echo "Se ha detectado un valor vacio en el vector"
+      exit 1
+    fi
+    ((i++))
+  done  
+}
+
+validateGroupNumber() {
+  local array=("$@")
+  local i=0
+  local count=${#array[@]}
+
+  while [ $i -lt $count ]; do
+    if [ "${array[$i]}" != "1" ] && [ "${array[$i]}" != "2" ]; then
+      echo "Se ha detectado que el grupo no se identifico con 1 ni con 2"
+      exit 1
+    fi
+    ((i++))
+  done  
+}
+
+validateUserExists() {
+  local array=("$@")
+  local i=0
+  local count=${#array[@]}
+
+  while [ $i -lt $count ]; do
+    if [ -n "$(cat /etc/passwd | grep "${array[$i]}")" ]; then
+      echo "Se ha detectado que uno de los usuarios ya existe"
+      exit 1
+    fi
+    ((i++))
+  done  
+}
+
+status_service_systemctl() { # VERIFICAR SI EL SERVICIO ESTA INSTALADO ANTES
+	if [ "$(systemctl status $1 2>&1 | grep 'could not be found')" = "" ]; then
+	  echo -e "\n=== Estado del servicio ===\n"
+	  systemctl status $1 | head -n 12	
+	else
+		echo -e "\nNo se ha detectado el servicio $1"
+    exit 1
+	fi
+}
+
+uninstall_service() {
+	if [ "$(dpkg -l $1 2>&1 | grep 'ii')" = "" ]; then
+		echo "No se ha detectado el servicio $1"
+	else
+		echo "Se ha detectado el servicio $1"
+
+		if [ "$2" = "1" ]; then
+			echo "Empezando desinstalacion"
+			apt-get remove -y --purge "$1" > /dev/null
+			echo "Se ha terminado de desinstalar el servicio $1"
+		elif [ "$2" = "0" ]; then
+			echo "Para desinstalar el servicio haz uso de la bandera -c"
+		else
+			echo "Se ha detectado una opc. invalida"		
+		fi
+	fi	
+}
+
 
 #if [ "${1}" != "--source-only" ]; then
 #  ip="150.255.255.255"

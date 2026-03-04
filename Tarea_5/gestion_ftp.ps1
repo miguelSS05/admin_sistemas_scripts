@@ -83,10 +83,13 @@ function uninstallService {
         }
     } 
 }
-
 function changeGroup {
     validateEmpty $users
     validateEmpty $groups
+
+    $Ruta="C:\FTP"
+    $RutaLocalUser = "$Ruta\LocalUser"
+    $RutaUsuario = "$RutaLocalUser\$users"
 
     # Eliminar grupos a los que pertenecia antes el usuario
     Get-LocalGroup | Where-Object { `
@@ -94,14 +97,92 @@ function changeGroup {
     } | ForEach-Object {Remove-LocalGroupMember -Member $users -Group $_.Name}
 
     if ( "$groups" -eq "1" ) {
+        if (-not (Test-Path -Path "$RutaUsuario\Reprobados")) { New-Item -ItemType Junction -Path "$RutaUsuario\Reprobados" -Target "$Ruta\Reprobados" -Force | Out-Null }
+        if (Test-Path -Path "$RutaUsuario\Recursadores") { Remove-Item -Path "$RutaUsuario\Recursadores" -Recurse -Confirm:$false | Out-Null }
+
+        icacls "$RutaUsuario\Reprobados" /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Reprobados:(OI)(CI)M" /T /C /Q 
+        #icacls "$RutaUsuario\Reprobados" /grant "Authenticated Users:(OI)(CI)(M)" /C /Q
+
         Add-LocalGroupMember -Group "Reprobados" -Member "$users"
         Write-Host "Se ha cambiando el grupo del usuario a Reprobados" -Foregroundcolor green
     } elseif ( "$groups" -eq "2") {
+        if (-not (Test-Path -Path "$RutaUsuario\Recursadores")) { New-Item -ItemType Junction -Path "$RutaUsuario\Recursadores" -Target "$Ruta\Recursadores" -Force | Out-Null }
+        if (Test-Path -Path "$RutaUsuario\Reprobados") { Remove-Item -Path "$RutaUsuario\Reprobados" -Recurse -Confirm:$false | Out-Null }
+
+        icacls "$RutaUsuario\Recursadores" /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Recursadores:(OI)(CI)M" /T /C /Q
+        #icacls "$RutaUsuario\Recursadores" /grant "Authenticated Users:(OI)(CI)(M)" /C /Q 
+
         Add-LocalGroupMember -Group "Recursadores" -Member "$users"
         Write-Host "Se ha cambiando el grupo del usuario a Recursadores" -Foregroundcolor green
     } else {
         Write-Host "Se ha detectado una opcion invalida de grupo" -Foregroundcolor red
     }
+}
+
+function UserExist {
+    param (
+        [string] $nombre
+    )
+
+    $aux = Get-LocalUser -Name "$nombre" -ErrorAction SilentlyContinue
+
+    if ($null -ne $aux) {
+        return $true;
+    } else {
+        return $false;
+    }
+}
+
+function deleteUser {
+    param (
+        [string] $nombre
+    )
+    
+    if (UserExist -nombre $nombre) {
+        Remove-LocalUser -Name "$nombre"
+    }
+
+    if (UserExist -nombre $nombre) {
+        Write-Host ""
+        Remove-LocalUser -Name "$nombre"
+    }
+}
+
+function validateUserName {
+    param ([string]$userName)
+    
+    # Regla: No puede estar vacío y debe tener entre 3 y 20 caracteres
+    if ($userName.Length -lt 3 -or $userName.Length -gt 20) {
+        Write-Host "Error: El usuario '$userName' debe tener entre 3 y 20 caracteres." -ForegroundColor Red
+        return $false
+    }
+
+    # Regla: No caracteres especiales prohibidos por Windows
+    if ($userName -match '[\\/\[\]:;|=,+*?<>]') {
+        Write-Host "Error: El usuario '$userName' contiene caracteres no permitidos." -ForegroundColor Red
+        return $false
+    }
+
+    return $true
+}
+
+function validatePassword {
+    param ([string]$password)
+
+    $isStrong = $true
+    $msg = ""
+
+    if ($password.Length -lt 8) { $isStrong = $false; $msg += " - Mínimo 8 caracteres.`n" }
+    if ($password -notmatch '[A-Z]') { $isStrong = $false; $msg += " - Al menos una mayúscula.`n" }
+    if ($password -notmatch '[0-9]') { $isStrong = $false; $msg += " - Al menos un número.`n" }
+    if ($password -notmatch '[\W_]') { $isStrong = $false; $msg += " - Al menos un carácter especial.`n" }
+
+    if (-not $isStrong) {
+        Write-Host "Contraseña inválida. Debe cumplir:`n$msg" -ForegroundColor Red
+        return $false
+    }
+
+    return $true
 }
 
 function addUsers {
@@ -110,18 +191,8 @@ function addUsers {
     $passwords = $passwords -split ","
     $groups = $groups -split ","
 
-    if ($users.Length -ne $no_users) {
-        Write-Host "Se ha detectado que el numero de nombres no es igual al numero de usuarios" -ForegroundColor red
-        exit 1
-    }
-
-    if ($passwords.Length -ne $no_users) {
-        Write-Host "Se ha detectado que el numero de contrasenas no es igual al numero de usuarios" -ForegroundColor red
-        exit 1
-    }
-
-    if ($groups.Length -ne $no_users) {
-        Write-Host "Se ha detectado que el numero de grupos no es igual al numero de usuarios" -ForegroundColor red
+    if ($users.Length -ne $no_users -or $passwords.Length -ne $no_users -or $groups.Length -ne $no_users) {
+        Write-Host "El número de usuarios, contraseñas y grupos debe coincidir con -no_users" -ForegroundColor red
         exit 1
     }
 
@@ -129,36 +200,46 @@ function addUsers {
     validateEmptyArray $passwords
     validateEmptyArray $groups
 
-    validateGroupNumber $groups # Verificar que sea 1 o 2
-    validateUserCreated $users # Verificar que los usuarios no se hayan creado antes
+    validateGroupNumber $groups 
+    validateUserCreated $users 
 
-    $i=0
+    # 1. Crear la carpeta maestra de aislamiento obligatoria de IIS
+    $RutaLocalUser = "$Ruta\LocalUser"
+    if (-not (Test-Path -Path $RutaLocalUser)) { New-Item -Path $RutaLocalUser -ItemType Directory -Force | Out-Null }
 
     for($i=0; $i -lt $no_users; $i++) {
         $aux = ConvertTo-SecureString -String "$($passwords[$i])" -AsPlainText -Force
-        New-LocalUser -Name "$($users[$i])" -Password $aux -PasswordNeverExpires
+        New-LocalUser -Name "$($users[$i])" -Password $aux -PasswordNeverExpires | Out-Null
 
-        $RutaUsuario="$Ruta\$($users[$i])"
+        # 2. La nueva ruta del usuario ahora estará enjaulada
+        $RutaUsuario = "$RutaLocalUser\$($users[$i])"
 
-        if (-not (Test-Path -Path "$RutaUsuario" -PathType Container)) {
-            New-Item -Path "$RutaUsuario" -ItemType Directory -Force
+        if (-not (Test-Path -Path "$RutaUsuario")) {
+            New-Item -Path "$RutaUsuario" -ItemType Directory -Force | Out-Null
         }
 
+        # 3. Permisos de su jaula personal (Solo el usuario, SYSTEM y Admin entran)
         icacls $RutaUsuario /inheritance:r /grant "$($users[$i]):(OI)(CI)F" /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /T /C /Q
 
+        # 4. IMPLEMENTAR LOS "MOUNTS" (Junctions) hacia las carpetas compartidas
+        if (-not (Test-Path -Path "$RutaUsuario\Publica")) { New-Item -ItemType Junction -Path "$RutaUsuario\Publica" -Target "$Ruta\Publica" -Force | Out-Null }
+
+        # 5. Asignar el usuario a su grupo
         if ( "$($groups[$i])" -eq "1" ) {
+            if (-not (Test-Path -Path "$RutaUsuario\Reprobados")) { New-Item -ItemType Junction -Path "$RutaUsuario\Reprobados" -Target "$Ruta\Reprobados" -Force | Out-Null }
             Add-LocalGroupMember -Group "Reprobados" -Member "$($users[$i])"
             Add-LocalGroupMember -Group "Users" -Member "$($users[$i])"
         } elseif ( "$($groups[$i])" -eq "2" ) {
+            if (-not (Test-Path -Path "$RutaUsuario\Recursadores")) { New-Item -ItemType Junction -Path "$RutaUsuario\Recursadores" -Target "$Ruta\Recursadores" -Force | Out-Null }
             Add-LocalGroupMember -Group "Recursadores" -Member "$($users[$i])"
             Add-LocalGroupMember -Group "Users" -Member "$($users[$i])"
-        } else {
-            Write-Host "Se ha detectado un numero de grupo invalido (no es ni 1 ni 2)" -Foregroundcolor red
-            exit 1
         }
+
+        # 6. Crear la carpeta personal
+        if (-not (Test-Path -Path "$RutaUsuario\$($users[$i])")) { New-Item -ItemType Directory -Path "$RutaUsuario\$($users[$i])" -Force | Out-Null }
     }
 
-    Write-Host "Se ha terminao de añadir a los usuarios correctamente" -Foregroundcolor green
+    Write-Host "Se ha terminado de añadir a los usuarios correctamente." -Foregroundcolor green
 }
 
 # function configureService {
@@ -313,6 +394,9 @@ function configureService {
 
     $Name="FTP Service"
     $Ruta="C:\FTP"
+    $Anonymous="$Ruta\Anonymous"
+    $RutaLocalUser = "$Ruta\LocalUser"
+    $AnonymousJunction="$RutaLocalUser\Public\Publica"
     $CarpetaA="$Ruta\Reprobados"
     $CarpetaB="$Ruta\Recursadores"
     $CarpetaC="$Ruta\Publica"
@@ -320,68 +404,85 @@ function configureService {
     Write-Host "Preparando estructura de directorios..." -ForegroundColor Cyan
 
     # 1. Crear las carpetas si no existen
-    if (-not (Test-Path -Path $Ruta)) { New-Item -Path $Ruta -ItemType Directory -Force }
-    if (-not (Test-Path -Path $CarpetaA)) { New-Item -Path $CarpetaA -ItemType Directory -Force }
-    if (-not (Test-Path -Path $CarpetaB)) { New-Item -Path $CarpetaB -ItemType Directory -Force }
-    if (-not (Test-Path -Path $CarpetaC)) { New-Item -Path $CarpetaC -ItemType Directory -Force }
+    if (-not (Test-Path -Path $Ruta)) { New-Item -Path $Ruta -ItemType Directory -Force | Out-Null }
+    if (-not (Test-Path -Path $CarpetaA)) { New-Item -Path $CarpetaA -ItemType Directory -Force | Out-Null }
+    if (-not (Test-Path -Path $CarpetaB)) { New-Item -Path $CarpetaB -ItemType Directory -Force | Out-Null }
+    if (-not (Test-Path -Path $CarpetaC)) { New-Item -Path $CarpetaC -ItemType Directory -Force | Out-Null }
+
+    #1.1 Crear carpeta para aislamiento de usuarios
+    if (-not (Test-Path -Path $RutaLocalUser)) { New-Item -Path $RutaLocalUser -ItemType Directory -Force | Out-Null }
+
+    #1.2 Crear carpeta para anonymous
+    if (-not (Test-Path -Path "$Anonymous")) { New-Item -Path "$Anonymous" -ItemType Directory -Force | Out-Null '.\Curso Bash.pdf'}
+    if (-not (Test-Path -Path "$RutaLocalUser\Public")) { New-Item -Path "$RutaLocalUser\Public" -ItemType Directory -Force | Out-Null }
+    if (-not (Test-Path -Path "$AnonymousJunction")) { New-Item -ItemType Junction -Path "$AnonymousJunction" -Target "$Anonymous" -Force | Out-Null }
 
     # 2. ¡EL PASO CLAVE! Restaurar permisos a la normalidad para que IIS no se trabe por pruebas anteriores
-    icacls $Ruta /reset /T /C /Q
+    icacls $Ruta /reset /T /C /Q > $null 2>&1
     if (Test-Path "$Ruta\web.config") { Remove-Item "$Ruta\web.config" -Force -ErrorAction SilentlyContinue }
 
     Write-Host "Configurando el servicio IIS y FTP..." -ForegroundColor Cyan
 
     # 3. Creación de grupos
-    if((Get-LocalGroup | findstr "Reprobados") -eq $null) { New-LocalGroup -Name "Reprobados" -Description "Reprobados" } 
-    if((Get-LocalGroup | findstr "Recursadores") -eq $null) { New-LocalGroup -Name "Recursadores" -Description "Recursadores" }
+    if((Get-LocalGroup | findstr "Reprobados") -eq $null) { New-LocalGroup -Name "Reprobados" -Description "Reprobados" | Out-Null} 
+    if((Get-LocalGroup | findstr "Recursadores") -eq $null) { New-LocalGroup -Name "Recursadores" -Description "Recursadores" | Out-Null}
 
     # 4. Creación del sitio FTP en IIS
     Import-Module WebAdministration
-    New-WebFtpSite -Name $Name -Port 21 -PhysicalPath $Ruta -Force
+    New-WebFtpSite -Name $Name -Port 21 -PhysicalPath $Ruta -Force | Out-Null
 
     # 5. Configuración de Autenticación y SSL
-    Set-ItemProperty "IIS:\Sites\$Name" -Name "ftpServer.security.authentication.anonymousAuthentication.enabled" -Value $true
-    Set-ItemProperty "IIS:\Sites\$Name" -Name "ftpServer.security.authentication.basicAuthentication.enabled" -Value $true
-    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.userIsolation.mode" -Value "None"
+    Set-ItemProperty "IIS:\Sites\$Name" -Name "ftpServer.security.authentication.anonymousAuthentication.enabled" -Value $true > $null 2>&1
+    Set-ItemProperty "IIS:\Sites\$Name" -Name "ftpServer.security.authentication.basicAuthentication.enabled" -Value $true > $null 2>&1
+    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.userIsolation.mode" -Value "IsolateAllDirectories" > $null 2>&1
 
     $Cert = New-SelfSignedCertificate -DnsName "MiServidorFTP" -CertStoreLocation "cert:\LocalMachine\My"
-    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.serverCertHash" -Value $Cert.Thumbprint
-    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.controlChannelPolicy" -Value "SslRequire"
-    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.dataChannelPolicy" -Value "SslRequire"
+    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.serverCertHash" -Value $Cert.Thumbprint > $null 2>&1
+    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.controlChannelPolicy" -Value "SslRequire" > $null 2>&1
+    Set-ItemProperty -Path "IIS:\Sites\$Name" -Name "ftpServer.security.ssl.dataChannelPolicy" -Value "SslRequire" > $null 2>&1
 
     # 6. Firewall
     if ((Get-NetFirewallRule -Name "Regla_FTP_In" -ErrorAction SilentlyContinue) -eq $null) {
-        New-NetFirewallRule -Name "Regla_FTP_In" -DisplayName "Permitir FTP (Puerto 21)" -Direction Inbound -Protocol TCP -LocalPort 21 -Action Allow
+        New-NetFirewallRule -Name "Regla_FTP_In" -DisplayName "Permitir FTP (Puerto 21)" -Direction Inbound -Protocol TCP -LocalPort 21 -Action Allow > $null 2>&1
     }
 
     Write-Host "Aplicando reglas de autorización de IIS..." -ForegroundColor Cyan
 
     # 7. Reglas de Autorización de IIS (Ahora se ejecutan sin error porque la carpeta no está bloqueada)
     Clear-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -ErrorAction SilentlyContinue
-    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="?"; permissions="Read"}
-    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="*"; permissions="Read, Write"}
-
+    #Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="?"; permissions="Read"}
+    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="*"; permissions="Read, Write"} > $null 2>&1
+    Add-WebConfiguration -Filter "/system.ftpServer/security/authorization" -Value @{accessType="Allow"; users="anonymous"; permissions="Read"} -PSPath "IIS:\Sites\$Name" > $null 2>&1
+    
     Write-Host "Aplicando candados de seguridad NTFS..." -ForegroundColor Cyan
 
     # 8. HASTA EL FINAL: Aseguramos la carpeta raíz
-    icacls $Ruta /inheritance:r /C /Q
-    icacls $Ruta /grant "Administrators:(OI)(CI)F" /C /Q
-    icacls $Ruta /grant "SYSTEM:(OI)(CI)F" /C /Q
-    icacls $Ruta /grant "IIS_IUSRS:(OI)(CI)RX" /C /Q
-    icacls $Ruta /grant "IUSR:(OI)(CI)X" /C /Q
-    icacls $Ruta /grant "Authenticated Users:(OI)(CI)X" /C /Q
+    icacls $Ruta /inheritance:r /C /Q > $null 2>&1
+    icacls $Ruta /grant "Administrators:(OI)(CI)F" /C /Q > $null 2>&1
+    icacls $Ruta /grant "SYSTEM:(OI)(CI)F" /C /Q > $null 2>&1
+    icacls $Ruta /grant "IIS_IUSRS:(OI)(CI)RX" /C /Q > $null 2>&1
+    icacls $Ruta /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
+    icacls $Ruta /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
+
+    # "$RutaLocalUser\ftp" icacls "$RutaLocalUser\ftp"  /grant "IUSR:(OI)(CI)(RX)" /C /Q
+
+    icacls $RutaLocalUser  /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
+    icacls $RutaLocalUser  /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
+
+    icacls $Anonymous /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+    icacls $AnonymousJunction /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+    icacls "$RutaLocalUser\Public" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+
 
 # 9. HASTA EL FINAL: Aseguramos las subcarpetas (TODO EN UNA SOLA LÍNEA)
-    icacls $CarpetaA /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Reprobados:(OI)(CI)M" /T /C /Q 
+    icacls $CarpetaA /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Reprobados:(OI)(CI)M" /T /C /Q > $null 2>&1
+    icacls $CarpetaB /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Recursadores:(OI)(CI)M" /T /C /Q > $null 2>&1
+    icacls $CarpetaC /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "IUSR:(OI)(CI)R" /grant "Authenticated Users:(OI)(CI)M" /T /C /Q > $null 2>&1
 
-    icacls $CarpetaB /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Recursadores:(OI)(CI)M" /T /C /Q
-
-    icacls $CarpetaC /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "IUSR:(OI)(CI)R" /grant "Authenticated Users:(OI)(CI)M" /T /C /Q
-
-    icacls $CarpetaA /deny "Recursadores:(OI)(CI)F" /T /C /Q
-    icacls $CarpetaB /deny "Reprobados:(OI)(CI)F" /T /C /Q
-    icacls $CarpetaA /deny "IUSR:(OI)(CI)F" /T /C /Q
-    icacls $CarpetaB /deny "IUSR:(OI)(CI)F" /T /C /Q
+    icacls $CarpetaA /deny "Recursadores:(OI)(CI)F" /T /C /Q > $null 2>&1
+    icacls $CarpetaB /deny "Reprobados:(OI)(CI)F" /T /C /Q > $null 2>&1
+    icacls $CarpetaA /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
+    icacls $CarpetaB /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
 
     Restart-WebItem "IIS:\Sites\$Name"
     Write-Host "Configuración completada con éxito." -ForegroundColor Green
