@@ -1,3 +1,23 @@
+$gruposSistema = @(
+    "Access Control Assistance Operators", "Administrators", "Backup Operators",
+    "Certificate Service DCOM Access", "Cryptographic Operators", "Device Owners",
+    "Distributed COM Users", "Event Log Readers", "Guests", "Hyper-V Administrators",
+    "IIS_IUSRS", "Network Configuration Operators", "Performance Log Users",
+    "Performance Monitor Users", "Power Users", "Print Operators", "RDS Endpoint Servers",
+    "RDS Management Servers", "RDS Remote Access Servers", "Remote Desktop Users",
+    "Remote Management Users", "Replicator", "Storage Replica Administrators",
+    "System Managed Accounts Group", "Users"
+)
+
+$script:usuariosSistema = @(
+    "Administrator",
+    "Guest",
+    "DefaultAccount",
+    "WDAGUtilityAccount",
+    "IUSR",           
+    "utilityaccount"  
+)
+
 function validateEmpty {
 	param (
 		[string]$value,
@@ -290,7 +310,8 @@ function validateEmptyArray {
     )
 
     foreach($element in $array) {
-        if ($element -eq $null) {
+        $element = $element.Trim()
+        if ($element -eq "") {
             Write-Host "Se ha detectado un valor vacio en el arreglo" -Foreground red
             exit 1
         }
@@ -310,17 +331,123 @@ function validateGroupNumber {
     }
 }
 
+function UserExist {
+    param (
+        [string] $nombre
+    )
+
+    $nombre = $nombre.Trim();
+
+    $aux = Get-LocalUser -Name "$nombre" -ErrorAction SilentlyContinue
+
+    if ($null -ne $aux) {
+        return $true;
+    } else {
+        return $false;
+    }
+}
+
 function validateUserCreated {
     param (
         [array] $array
     )
 
     foreach($element in $array) {
-        $aux = Get-LocalUser -Name $element -ErrorAction SilentlyContinue
-
-        if ($aux -ne $null) {
+        if (UserExist $element) {
             Write-Host "Se ha encontrado que el usuario '$aux' ya ha sido creado"
             exit 1
         }
     }
+}
+
+function validateUserName {
+    param ([string]$userName)
+    
+    # Regla: No puede estar vacío y debe tener entre 3 y 20 caracteres
+    if ($userName.Length -lt 3 -or $userName.Length -gt 20) {
+        Write-Host "Error: El usuario '$userName' debe tener entre 3 y 20 caracteres." -ForegroundColor Red
+        return $false
+    }
+
+    # Regla: No caracteres especiales prohibidos por Windows
+    if ($userName -match '[\\/\[\]:;|=,+*?<>]') {
+        Write-Host "Error: El usuario '$userName' contiene caracteres no permitidos." -ForegroundColor Red
+        return $false
+    }
+
+    return $true
+}
+
+function validatePassword {
+    param ([string]$password)
+
+    $isStrong = $true
+    $msg = ""
+
+    if ($password.Length -lt 8) { $isStrong = $false; $msg += " - Mínimo 8 caracteres.`n" }
+    if ($password -notmatch '[A-Z]') { $isStrong = $false; $msg += " - Al menos una mayúscula.`n" }
+    if ($password -notmatch '[0-9]') { $isStrong = $false; $msg += " - Al menos un número.`n" }
+    if ($password -notmatch '[\W_]') { $isStrong = $false; $msg += " - Al menos un carácter especial.`n" }
+
+    if (-not $isStrong) {
+        Write-Host "Contraseña inválida. Debe cumplir:`n$msg" -ForegroundColor Red
+        return $false
+    }
+
+    return $true
+}
+
+function validateUsernameArray {
+    param (
+        [array] $array
+    )
+
+    foreach($element in $array) {
+        if (-not (validateUserName -userName $element -eq $true)) {
+            exit 1
+        }
+    }
+}
+
+function crearGrupo {
+    param (
+        [string] $nombreGrupo,
+        [string] $descripcion
+    )
+
+    # Limpiamos espacios por si el usuario tecleó de más
+    $nombreGrupo = $nombreGrupo.Trim()
+
+    # 1. Validar que NO sea un grupo protegido del sistema
+    if ($script:gruposSistema -contains $nombreGrupo) {
+        Write-Host "Error: No puedes crear el grupo '$nombreGrupo' porque es un grupo reservado del sistema." -ForegroundColor Red
+        return $false
+    }
+
+    # 2. Validar que el grupo no exista ya en la máquina
+    $grupoExistente = Get-LocalGroup -Name $nombreGrupo -ErrorAction SilentlyContinue
+    
+    if ($null -ne $grupoExistente) {
+        Write-Host "Aviso: El grupo '$nombreGrupo' ya existe en el servidor." -ForegroundColor Yellow
+        return $false
+    }
+
+    # 3. Creación del grupo en Windows (Silencioso)
+    New-LocalGroup -Name $nombreGrupo -Description $descripcion | Out-Null
+    
+    # 4. Creación del directorio físico en el FTP
+    $rutaDirectorio = "C:\FTP\$nombreGrupo"
+    if (-not (Test-Path -Path $rutaDirectorio)) {
+        New-Item -Path $rutaDirectorio -ItemType Directory -Force | Out-Null
+    }
+
+    # 5. Aplicar los candados NTFS al nuevo directorio (Silencioso)
+    # Rompemos herencia, aseguramos a los Admins y le damos permiso de Modificar (M) a los miembros del nuevo grupo
+    icacls $rutaDirectorio /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "${nombreGrupo}:(OI)(CI)M" /grant "Authenticated Users:(OI)(CI)M" /T /C /Q > $null 2>&1
+    
+    # Bloqueamos al usuario anónimo por seguridad
+    icacls $rutaDirectorio /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
+
+    Write-Host "¡El grupo '$nombreGrupo' y su carpeta han sido creados correctamente!" -ForegroundColor Green
+    return $true
 }
