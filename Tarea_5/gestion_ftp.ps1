@@ -45,6 +45,24 @@ if ($help) {
 $color="yellow"
 $ipLocal=""
 
+# ─── Función auxiliar ───────────────────────────────────────────────────────
+function Set-NtfsRule {
+    param(
+        [string]$Path,
+        [string]$Identity,
+        [string]$Rights,          # e.g. "FullControl","ReadAndExecute","Modify"
+        [string]$Inheritance = "ContainerInherit,ObjectInherit",
+        [string]$Propagation = "None",
+        [string]$Type = "Allow"   # "Allow" | "Deny"
+    )
+    $acl   = Get-Acl -Path $Path
+    $rule  = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $Identity, $Rights, $Inheritance, $Propagation, $Type)
+    if ($Type -eq "Deny") { $acl.AddAccessRule($rule) }
+    else                  { $acl.SetAccessRule($rule) }
+    Set-Acl -Path $Path -AclObject $acl
+}
+
 function checkService {
 	$aux = Get-Service -Name "FTPSVC" -ErrorAction SilentlyContinue
 
@@ -148,7 +166,7 @@ function changeGroup {
     # 4. LIMPIEZA SEGURA: Sacarlo solo de los grupos académicos viejos
     # Usamos tu vector global para NUNCA sacarlo de "Users" u otros grupos vitales
     $gruposActuales = Get-LocalGroup | Where-Object { 
-        ($_.Name -notin $script:gruposSistema) -and 
+        ($_.Name -notin $script:gruposSistema) -and ($_.Name -ne "Alumnos") -and
         ((Get-LocalGroupMember -Group $_.Name -ErrorAction SilentlyContinue).Name -match $usuario) 
     }
 
@@ -158,7 +176,7 @@ function changeGroup {
         # Borramos el túnel (Junction) viejo de su jaula para que ya no lo vea
         $rutaTunelViejo = "$RutaUsuario\$($grupoViejo.Name)"
         if (Test-Path -Path $rutaTunelViejo) {
-            Remove-Item -Path $rutaTunelViejo -Force -Confirm:$false | Out-Null
+            Remove-Item -Path $rutaTunelViejo -Recurse -Force -Confirm:$false | Out-Null
         }
     }
 
@@ -175,8 +193,7 @@ function changeGroup {
     #icacls $rutaNuevoTunel /grant "${grupoDestino}:(OI)(CI)(RX)" /T /C /Q
     #icacls $rutaNuevoTunel /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Authenticated Users:(OI)(CI)(RX)" /T /C /Q > $null 2>&1 
 
-# 7. REPARACIÓN DE PERMISOS (Sustituye lo que tenías)
-    Write-Host "Restaurando herencia para $usuario..." -ForegroundColor Cyan
+
 
 	$aux = Get-Service -Name "FTPSVC" -ErrorAction SilentlyContinue
 
@@ -347,8 +364,23 @@ function crearAlumno {
         }
 
         # 3. Permisos de la jaula en silencio total
-        icacls $RutaUsuario /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Authenticated Users:(OI)(CI)(RX)" /grant "$($usuarioActual):(OI)(CI)(RX)" /T /C /Q > $null 2>&1
-        icacls $RutaUsuario  /grant "Authenticated Users:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+        # ─── $RutaUsuario : deshabilitar herencia y aplicar permisos base ────────────
+        $acl = Get-Acl -Path $RutaUsuario
+        $acl.SetAccessRuleProtection($true, $false)   # /inheritance:r  (rompe herencia, no copia reglas existentes)
+        Set-Acl -Path $RutaUsuario -AclObject $acl
+
+        Set-NtfsRule $RutaUsuario "Administrators"       "FullControl"
+        Set-NtfsRule $RutaUsuario "SYSTEM"               "FullControl"
+        Set-NtfsRule $RutaUsuario "Authenticated Users"  "ReadAndExecute"
+        Set-NtfsRule $RutaUsuario $usuarioActual         "ReadAndExecute"
+
+        # ─── Aplicar recursivo a todo el árbol (/T) ──────────────────────────────────
+        Get-ChildItem -Path $RutaUsuario -Recurse -Force | ForEach-Object {
+            Set-NtfsRule $_.FullName "Authenticated Users" "ReadAndExecute"
+        }
+        #Write-Host "el valor de rutausuario es $RutaUsuario"
+        #Write-Host "el valor de rutausuario es $RutaUsuario"
+        #Write-Host "el valor de rutausuario es $RutaUsuario"
 
         # Implementar Junctions
         if (-not (Test-Path -Path "$RutaUsuario\Publica")) { 
@@ -361,23 +393,53 @@ function crearAlumno {
         }
 
 
-    # 1. LIMPIEZA: Resetear todo a un estado conocido
-    icacls "$RutaUsuario\$usuarioActual" /reset /T /C /Q > $null 2>&1
+        # 1. RESET /T : eliminar reglas explícitas y re-habilitar herencia en todo el árbol
+        @($RutaUsuario) + (Get-ChildItem $RutaUsuario -Recurse -Force).FullName | ForEach-Object {
+            $rutaActual = $_                          # ← guardamos la ruta aquí
+            $acl = Get-Acl $rutaActual
+            $acl.SetAccessRuleProtection($false, $false)
+            $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) } | Out-Null
+            Set-Acl -Path $rutaActual -AclObject $acl  # ← usamos la variable, no $_
+        }
 
-    # 2. EL PASO CLAVE: Romper la herencia y copiar los permisos actuales
-    # Esto evita que los permisos de "LocalUser" o "C:\FTP" interfieran
-    icacls "$RutaUsuario\$usuarioActual" /inheritance:r /C /Q > $null 2>&1
+        # 2. Romper herencia SIN copiar reglas del padre  (/inheritance:r)
+        $acl = Get-Acl $RutaUsuario
+        $acl.SetAccessRuleProtection($true, $false)
+        Set-Acl -Path $RutaUsuario -AclObject $acl
 
-    # 3. PERMISO DE TRABAJO: Darle modificar HEREDABLE a itadori
-    # (OI)(CI) permite que itadori borre archivos y carpetas que el cree ADENTRO
-    icacls "$RutaUsuario\$usuarioActual" /grant "Authenticated Users:(OI)(CI)M" /C /Q > $null 2>&1
+        # 3. Authenticated Users : Modify heredable  (OI)(CI)M
+        Set-NtfsRule $RutaUsuario "Authenticated Users" "ReadAndExecute" "ContainerInherit,ObjectInherit" "None" "Allow"
 
-    # 4. SEGURIDAD: Asegurar que tú como admin no pierdas el acceso total
-    icacls "$RutaUsuario\$usuarioActual" /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /C /Q > $null 2>&1
+        # 4. Administrators y SYSTEM : FullControl heredable  (OI)(CI)F
+        Set-NtfsRule $RutaUsuario "Administrators" "FullControl" "ContainerInherit,ObjectInherit" "None" "Allow"
+        Set-NtfsRule $RutaUsuario "SYSTEM"         "FullControl" "ContainerInherit,ObjectInherit" "None" "Allow"
 
-    # 5. EL CANDADO MAESTRO: Denegar borrado de la carpeta raíz SOLAMENTE
-    # Sin /T y sin (OI)(CI). Esto protege 'itadori' pero no 'itadori\qeeq'
-    icacls "$RutaUsuario\$usuarioActual" /deny "Authenticated Users:(DE)" /C /Q > $null 2>&1
+        # 5. CANDADO: Denegar Delete SOLO en esta carpeta raíz (sin (OI)(CI) → sin herencia)
+        $acl  = Get-Acl $RutaUsuario
+        $deny = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    "Authenticated Users",
+                    [System.Security.AccessControl.FileSystemRights]::Delete,
+                    [System.Security.AccessControl.InheritanceFlags]::None,      # sin (OI)(CI)
+                    [System.Security.AccessControl.PropagationFlags]::None,
+                    "Deny")
+        $acl.AddAccessRule($deny)
+        Set-Acl -Path $RutaUsuario -AclObject $acl
+
+        Set-NtfsRule "$RutaUsuario\$usuarioActual" "Authenticated Users" "Modify" "ContainerInherit,ObjectInherit" "None" "Allow"
+
+        # 4. Administrators y SYSTEM : FullControl heredable  (OI)(CI)F
+        Set-NtfsRule "$RutaUsuario\$usuarioActual" "Administrators" "FullControl" "ContainerInherit,ObjectInherit" "None" "Allow"
+        Set-NtfsRule "$RutaUsuario\$usuarioActual" "SYSTEM"         "FullControl" "ContainerInherit,ObjectInherit" "None" "Allow"
+
+        $acl  = Get-Acl "$RutaUsuario\$usuarioActual"
+        $deny = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    "Authenticated Users",
+                    [System.Security.AccessControl.FileSystemRights]::Delete,
+                    [System.Security.AccessControl.InheritanceFlags]::None,      # sin (OI)(CI)
+                    [System.Security.AccessControl.PropagationFlags]::None,
+                    "Deny")
+        $acl.AddAccessRule($deny)
+        Set-Acl -Path "$RutaUsuario\$usuarioActual" -AclObject $acl
 
         # Permisos de la subcarpeta personal en silencio total
         #icacls "$RutaUsuario\$usuarioActual" /inheritance:r /grant "Authenticated Users:(OI)(CI)(M)" /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /T /C /Q > $null 2>&1
@@ -682,49 +744,96 @@ function configureService {
 # Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Deny"; users="anonymous"; permissions="Write"} > $null 2>&1
 
 # 3. Permitir que Anonymous pueda al menos LEER
-    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="*"; permissions="Read"} > $null 2>&1
+Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="?"; permissions="Read"} > $null 2>&1
 
 # 4. Permitir a todos los demás (usuarios autenticados) Leer y Escribir
 # Como el 'Deny' de arriba ya bloqueó al anónimo, este '*' solo afectará con escritura a los alumnos logueados
-    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; users="*"; permissions="Read, Write"} > $null 2>&1
+    Add-WebConfiguration -Filter /system.ftpServer/security/authorization -PSPath "IIS:\" -Location $Name -Value @{accessType="Allow"; roles="Alumnos"; permissions="Read, Write"} > $null 2>&1
 
     
     Write-Host "Aplicando candados de seguridad NTFS..." -ForegroundColor Cyan
 
     # 8. HASTA EL FINAL: Aseguramos la carpeta raíz
-    icacls $Ruta /inheritance:r /C /Q > $null 2>&1
-    icacls $Ruta /grant "Administrators:(OI)(CI)F" /C /Q > $null 2>&1
-    icacls $Ruta /grant "SYSTEM:(OI)(CI)F" /C /Q > $null 2>&1
-    icacls $Ruta /grant "IIS_IUSRS:(OI)(CI)RX" /C /Q > $null 2>&1
-    icacls $Ruta /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
-    icacls $Ruta /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
+#     icacls $Ruta /inheritance:r /C /Q > $null 2>&1
+#     icacls $Ruta /grant "Administrators:(OI)(CI)F" /C /Q > $null 2>&1
+#     icacls $Ruta /grant "SYSTEM:(OI)(CI)F" /C /Q > $null 2>&1
+#     icacls $Ruta /grant "IIS_IUSRS:(OI)(CI)RX" /C /Q > $null 2>&1
+#     icacls $Ruta /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
+#     icacls $Ruta /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
 
-    # "$RutaLocalUser\ftp" icacls "$RutaLocalUser\ftp"  /grant "IUSR:(OI)(CI)(RX)" /C /Q
+#     # "$RutaLocalUser\ftp" icacls "$RutaLocalUser\ftp"  /grant "IUSR:(OI)(CI)(RX)" /C /Q
 
-    icacls $RutaLocalUser  /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
-    icacls $RutaLocalUser  /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
+#     icacls $RutaLocalUser  /grant "Authenticated Users:(OI)(CI)(RX)" /C /Q > $null 2>&1
+#     icacls $RutaLocalUser  /grant "IUSR:(OI)(CI)(RX)" /C /Q > $null 2>&1
 
-    icacls $Anonymous /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
-    icacls $AnonymousJunction /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
-    icacls "$RutaLocalUser\Public" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
-    icacls "$RutaLocalUser\Public\Publica" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+#     icacls $Anonymous /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+#     icacls $AnonymousJunction /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+#     icacls "$RutaLocalUser\Public" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+#     icacls "$RutaLocalUser\Public\Publica" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
 
-# Permiso de paso en la raíz para que IIS pueda llegar a la subcarpeta
-#icacls $Ruta /grant "IUSR:(RX)" /Q
-#icacls $RutaLocalUser /grant "IUSR:(RX)" /Q
+# # Permiso de paso en la raíz para que IIS pueda llegar a la subcarpeta
+# #icacls $Ruta /grant "IUSR:(RX)" /Q
+# #icacls $RutaLocalUser /grant "IUSR:(RX)" /Q
 
-# Permiso total de lectura en la jaula pública de Anonymous
-#icacls "$RutaLocalUser\Public" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
+# # Permiso total de lectura en la jaula pública de Anonymous
+# #icacls "$RutaLocalUser\Public" /grant "IUSR:(OI)(CI)(RX)" /T /C /Q > $null 2>&1
 
-# 9. HASTA EL FINAL: Aseguramos las subcarpetas (TODO EN UNA SOLA LÍNEA)
-    icacls $CarpetaA /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Reprobados:(OI)(CI)M" /T /C /Q > $null 2>&1
-    icacls $CarpetaB /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Recursadores:(OI)(CI)M" /T /C /Q > $null 2>&1
-    icacls $CarpetaC /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "IUSR:(OI)(CI)R" /grant "Authenticated Users:(OI)(CI)M" /T /C /Q > $null 2>&1
+# # 9. HASTA EL FINAL: Aseguramos las subcarpetas (TODO EN UNA SOLA LÍNEA)
+#     icacls $CarpetaA /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Reprobados:(OI)(CI)M" /T /C /Q > $null 2>&1
+#     icacls $CarpetaB /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "Recursadores:(OI)(CI)M" /T /C /Q > $null 2>&1
+#     icacls $CarpetaC /inheritance:r /grant "Administrators:(OI)(CI)F" /grant "SYSTEM:(OI)(CI)F" /grant "IUSR:(OI)(CI)R" /grant "Authenticated Users:(OI)(CI)M" /T /C /Q > $null 2>&1
 
-    icacls $CarpetaA /deny "Recursadores:(OI)(CI)F" /T /C /Q > $null 2>&1
-    icacls $CarpetaB /deny "Reprobados:(OI)(CI)F" /T /C /Q > $null 2>&1
-    icacls $CarpetaA /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
-    icacls $CarpetaB /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
+#     icacls $CarpetaA /deny "Recursadores:(OI)(CI)F" /T /C /Q > $null 2>&1
+#     icacls $CarpetaB /deny "Reprobados:(OI)(CI)F" /T /C /Q > $null 2>&1
+#     icacls $CarpetaA /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
+#     icacls $CarpetaB /deny "IUSR:(OI)(CI)F" /T /C /Q > $null 2>&1
+
+    # ─── $Ruta : deshabilitar herencia y permisos base ──────────────────────────
+    $acl = Get-Acl -Path $Ruta
+    $acl.SetAccessRuleProtection($true, $false)   # /inheritance:r
+    Set-Acl -Path $Ruta -AclObject $acl
+
+    Set-NtfsRule $Ruta "Administrators"       "FullControl"
+    Set-NtfsRule $Ruta "SYSTEM"              "FullControl"
+    Set-NtfsRule $Ruta "IIS_IUSRS"           "ReadAndExecute"
+    Set-NtfsRule $Ruta "IUSR"               "ReadAndExecute"
+    Set-NtfsRule $Ruta "Authenticated Users" "ReadAndExecute"
+
+    # ─── $RutaLocalUser ─────────────────────────────────────────────────────────
+    Set-NtfsRule $RutaLocalUser "Authenticated Users" "ReadAndExecute"
+    Set-NtfsRule $RutaLocalUser "IUSR"               "ReadAndExecute"
+
+    # ─── $Anonymous y $AnonymousJunction (/T = recursivo) ───────────────────────
+    Get-ChildItem -Path $Anonymous        -Recurse -Force | ForEach-Object { Set-NtfsRule $_.FullName "IUSR" "ReadAndExecute" }
+    Set-NtfsRule $Anonymous        "IUSR" "ReadAndExecute"
+    Get-ChildItem -Path $AnonymousJunction -Recurse -Force | ForEach-Object { Set-NtfsRule $_.FullName "IUSR" "ReadAndExecute" }
+    Set-NtfsRule $AnonymousJunction "IUSR" "ReadAndExecute"
+
+    Set-NtfsRule "$RutaLocalUser\Public"         "IUSR" "ReadAndExecute"
+    Set-NtfsRule "$RutaLocalUser\Public\Publica" "IUSR" "ReadAndExecute"
+
+    # ─── $CarpetaA  (Reprobados:M, denegar Recursadores y IUSR) ─────────────────
+    $acl = Get-Acl $CarpetaA; $acl.SetAccessRuleProtection($true,$false); Set-Acl $CarpetaA $acl
+    Set-NtfsRule $CarpetaA "Administrators" "FullControl"
+    Set-NtfsRule $CarpetaA "SYSTEM"        "FullControl"
+    Set-NtfsRule $CarpetaA "Reprobados"    "Modify"
+    Set-NtfsRule $CarpetaA "Recursadores"  "FullControl" -Type "Deny"
+    Set-NtfsRule $CarpetaA "IUSR"         "FullControl" -Type "Deny"
+
+    # ─── $CarpetaB  (Recursadores:M, denegar Reprobados y IUSR) ─────────────────
+    $acl = Get-Acl $CarpetaB; $acl.SetAccessRuleProtection($true,$false); Set-Acl $CarpetaB $acl
+    Set-NtfsRule $CarpetaB "Administrators" "FullControl"
+    Set-NtfsRule $CarpetaB "SYSTEM"        "FullControl"
+    Set-NtfsRule $CarpetaB "Recursadores"  "Modify"
+    Set-NtfsRule $CarpetaB "Reprobados"    "FullControl" -Type "Deny"
+    Set-NtfsRule $CarpetaB "IUSR"         "FullControl" -Type "Deny"
+
+    # ─── $CarpetaC  (Authenticated Users:M, IUSR:R) ─────────────────────────────
+    $acl = Get-Acl $CarpetaC; $acl.SetAccessRuleProtection($true,$false); Set-Acl $CarpetaC $acl
+    Set-NtfsRule $CarpetaC "Administrators"      "FullControl"
+    Set-NtfsRule $CarpetaC "SYSTEM"             "FullControl"
+    Set-NtfsRule $CarpetaC "IUSR"              "ReadAndExecute"
+    Set-NtfsRule $CarpetaC "Authenticated Users" "Modify"
 
     Restart-WebItem "IIS:\Sites\$Name"
     Write-Host "Configuracion completada con exito." -ForegroundColor Green
