@@ -102,42 +102,42 @@ configure_options() {
   #fi
 
   if [ -d $base ]; then
-    chmod 755 "$base" 
-    chown "root:root" "$base"
+    chmod -R 755 "$base" 
+    chown -R "root:root" "$base"
 
     if ! [ -d $routeftp ]; then # CREACION /home/ftp
       mkdir $routeftp
       echo "Se ha creado el directorio /home/ftp"
     fi
 
-    chmod 755 "$routeftp" 
-    chown "root:root" "$routeftp"
+    chmod -R 755 "$routeftp" 
+    chown -R "root:root" "$routeftp"
 
     if ! [ -d $localuser ]; then # CREACION /home/ftp/localuser
       mkdir $localuser
       echo "Se ha creado el directorio $localuser"
     fi
 
-    chmod 755 "$localuser" 
-    chown "root:root" "$localuser"
+    chmod -R 755 "$localuser" 
+    chown -R "root:root" "$localuser"
 
     if ! [ -d "$routeftp/public" ]; then # CREACION /home/ftp/public carpeta general
       mkdir "$routeftp/public"
       echo "Se ha creado el directorio $localuser"
     fi
 
-    chmod 2775 "$routeftp/public"
-    chmod g+s "$routeftp/public"
-    chown "root:users" "$routeftp/public"  
+    chmod -R 2775 "$routeftp/public"
+    chmod -R g+s "$routeftp/public"
+    chown -R "root:users" "$routeftp/public"  
     
     if ! [ -d "$localuser/public" ]; then # CREACION /home/ftp/localuser/public usada por anonimo
       mkdir "$localuser/public"
       echo "Se ha creado el directorio $localuser"
     fi
 
-    chmod 775 "$localuser/public"
-    chmod g+s "$localuser/public"
-    chown "root:root" "$localuser/public"
+    chmod -R 775 "$localuser/public"
+    chmod -R g+s "$localuser/public"
+    chown -R "root:root" "$localuser/public"
 
     local carpeta_anonymous_public="$localuser/public/public"
 
@@ -146,8 +146,8 @@ configure_options() {
       echo "Se ha creado el directorio $carpeta_anonymous_public"
     fi
 
-    chmod 775 "$carpeta_anonymous_public"
-    chown "root:root" "$localuser/public"
+    chmod -R 775 "$carpeta_anonymous_public"
+    chown -R "root:root" "$localuser/public"
 
     mount --bind "$carpeta_anonymous_public" "$routeftp/public" 
      
@@ -234,8 +234,8 @@ change_groups() {
     mount --bind "$carpeta_real_grupo" "$nuevo_punto"
     
     # Asegurar permisos en el punto de montaje
-    chown root:"${groups}Alumno" "$nuevo_punto"
-    chmod 2775 "$nuevo_punto"
+    chown -R root:"${groups}Alumno" "$nuevo_punto"
+    chmod -R 2775 "$nuevo_punto"
 
     echo -e "\e[32mCambio completado: $names ahora está en $groups\e[0m"
 }
@@ -254,8 +254,8 @@ add_users2() {
   # Asegurar que la carpeta pública global exista
   if [ ! -d "$carpeta_publica" ]; then
       mkdir -p "$carpeta_publica"
-      chown root:users "$carpeta_publica"
-      chmod 2775 "$carpeta_publica"
+      chown -R root:users "$carpeta_publica"
+      chmod -R 2775 "$carpeta_publica"
   fi
 
   while [ $i -lt "$no_users" ]; do
@@ -289,12 +289,12 @@ add_users2() {
 
     # 4. PERMISOS DE SEGURIDAD (La regla de oro del FTP)
     # La jaula debe ser de root para que funcione el chroot
-    chown root:root "$ruta_jaula"
-    chmod 755 "$ruta_jaula"
+    chown -R root:root "$ruta_jaula"
+    chmod -R 755 "$ruta_jaula"
 
     # La carpeta personal interna sí es del alumno
-    chown "$nombre_actual:$nombre_actual" "$carpeta_personal"
-    chmod 700 "$carpeta_personal"
+    chown -R "$nombre_actual:$nombre_actual" "$carpeta_personal"
+    chmod -R 700 "$carpeta_personal"
 
     mount --bind "$carpeta_publica" "$punto_montaje_publico"
 
@@ -439,8 +439,8 @@ crearGrupoAcademico() {
 
     # 3. Permisos: root es el dueño, pero el grupo puede escribir
     # El '2' en '2775' activa el SGID (importante para carpetas grupales)
-    chown root:"$nombre_grupo" "$ruta_grupo"
-    chmod 2775 "$ruta_grupo"
+    chown -R root:"$nombre_grupo" "$ruta_grupo"
+    chmod -R 2775 "$ruta_grupo"
 }
 
 deleteGroup() {
