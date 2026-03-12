@@ -270,20 +270,136 @@ sumOne() {
 	v[$1]="$octet1.$octet2.$octet3.$octet4"		
 }
 
+verificar_instalacion_servicio() {
+    local servicio="$1"
 
-if [ "${1}" != "--source-only" ]; then
-	getText "Dame un valor" "var1"
-fi
+    if [[ -z "$servicio" ]]; then
+        echo "Uso: verificar_instalacion_servicio <nombre_del_servicio>" >&2
+        return 1
+    fi
 
-##### FUNCIONES PARA SCRIPTS CON PARAMETROS ######
+    if dpkg -l "$servicio" 2>/dev/null | grep -q '^ii'; then
+        echo -e "\nSe ha detectado el servicio '$servicio'"
+        return 0
+    else
+        echo -e "\nNo se ha detectado el servicio '$servicio'"
+        return 1
+    fi
+}
 
-pValidateIp() { 
-  local aux="${v[$1]}"
+list_pkg_versions() {
+    local pkg="$1"
 
-  v[$2]=$(echo $aux |  grep -P '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')
+    # Validar argumento
+    if [[ -z "$pkg" ]]; then
+        echo "Uso: list_pkg_versions <nombre_del_paquete>" >&2
+        return 1
+    fi
 
-  if [ "${v[$2]}" = "" ]; then
-	echo -e '\nNo se ha detectado el formato IPv4, vuelva a intentarlo'
-        v[$2]=$(echo $aux | grep -P '^(((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((10[0-9])|(1?[1-9]?[0-9])|(2[0-4][0-9])|(25[0-5]))$')
-  fi
+    # Verificar que apt-cache esté disponible
+    if ! command -v apt-cache &>/dev/null; then
+        echo "Error: apt-cache no está disponible en este sistema." >&2
+        return 1
+    fi
+
+    # Verificar que el paquete exista en los repositorios
+    if ! apt-cache show "$pkg" &>/dev/null; then
+        echo "Error: el paquete '$pkg' no fue encontrado en los repositorios." >&2
+        return 1
+    fi
+
+    echo "Versiones disponibles de '$pkg':"
+    echo "────────────────────────────────────────"
+
+    # Obtener versión instalada (si existe)
+    local installed
+    installed=$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null)
+
+    # Listar versiones con repositorio de origen
+    apt-cache madison "$pkg" | while IFS='|' read -r name version repo; do
+        version=$(echo "$version" | xargs)  # trim espacios
+        repo=$(echo "$repo"    | xargs)
+
+        if [[ -n "$installed" && "$version" == "$installed" ]]; then
+            echo "  ✔ $version  ← instalada"
+            echo "    Repositorio: $repo"
+        else
+            echo "  • $version"
+            echo "    Repositorio: $repo"
+        fi
+    done
+
+    echo "────────────────────────────────────────"
+
+    # Mostrar candidato recomendado
+    local candidate
+    candidate=$(apt-cache policy "$pkg" | awk '/Candidate:/ {print $2}')
+    if [[ -n "$candidate" ]]; then
+        echo "  Candidato para instalar/actualizar: $candidate"
+    fi
+
+    return 0
+}
+
+download_pkg() {
+    local pkg="$1"
+    local version="$2"
+
+    if [[ -z "$pkg" || -z "$version" ]]; then
+        echo "Uso: download_pkg <paquete> <versión>" >&2
+        echo "Ejemplo: download_pkg apache2 2.4.62-1~deb12u2" >&2
+        return 1
+    fi
+
+    if ! apt-cache show "${pkg}=${version}" &>/dev/null; then
+        echo "Error: no se encontró '${pkg}' versión '${version}'." >&2
+        echo "Tip: usa list_pkg_versions ${pkg} para ver las versiones disponibles." >&2
+        return 1
+    fi
+
+    echo "Instalando '${pkg}' versión '${version}'..."
+    if apt-get install -y "${pkg}=${version}"; then
+        echo "✔ '${pkg}=${version}' instalado exitosamente"
+        return 0
+    else
+        echo "✘ Error al instalar '${pkg}=${version}'." >&2
+        return 1
+    fi
+}
+
+obtener_estatus_servicio() {
+    local servicio="$1"
+
+    if [[ -z "$servicio" ]]; then
+        echo "Uso: obtener_estatus_servicio <nombre_del_servicio>" >&2
+        return 1
+    fi
+
+    # is-active devuelve 0 si activo, 3 si inactivo, 4 si no existe
+    # --quiet suprime el output, solo nos interesa el código de salida
+    if ! systemctl cat "$servicio" &>/dev/null; then
+        echo -e "\nNo se ha detectado el servicio '$servicio'"
+        return 1
+    fi
+
+    echo -e "\n=== Estado del servicio '$servicio' ===\n"
+    systemctl status "$servicio" --no-pager | head -n 12
+    return 0
+}
+
+buscar_servicio_instalado() {
+    local servicio="$1"
+
+    if [[ -z "$servicio" ]]; then
+        echo "Uso: buscar_servicio_instalado <nombre_del_servicio>" >&2
+        return 1
+    fi
+
+    # Verifica tanto el paquete instalado como la unidad en systemd
+    if dpkg -l "$servicio" 2>/dev/null | grep -q '^ii' || \
+       systemctl cat "$servicio" &>/dev/null; then
+        return 0
+    fi
+
+    return 1
 }
